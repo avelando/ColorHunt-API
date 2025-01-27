@@ -18,9 +18,22 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
+
   try {
+    console.log("Tentando logar com:", { email, password });
+
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    console.log("Usuário encontrado:", user);
+
+    if (!user) {
+      res.status(401).json({ message: "Invalid credentials" });
+      return;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log("Senha válida:", isPasswordValid);
+
+    if (!isPasswordValid) {
       res.status(401).json({ message: "Invalid credentials" });
       return;
     }
@@ -28,8 +41,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, {
       expiresIn: "1h",
     });
+    console.log("Token gerado:", token);
+
     res.json({ token });
   } catch (error) {
+    console.error("Erro no login:", error);
     res.status(500).json({ error: "Error logging in" });
   }
 };
