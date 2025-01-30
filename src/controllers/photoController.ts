@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { savePhoto, getPhotoById } from "../services/photoService";
 import { saveColors, extractPaletteFromColors } from "../services/colorService";
 import { extractPaletteFromImage } from "../utils/imageUtils";
+import prisma from "../config/prismaClient";
 
 export const uploadPhoto = async (req: Request, res: Response): Promise<void> => {
   const userId = req.userId;
@@ -29,6 +30,21 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
   } catch (error) {
     console.error("Error uploading photo:", error);
     res.status(500).json({ error: "Error saving photo and generating palette" });
+  }
+};
+
+export const getUserPhotos = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.userId;
+
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    res.status(200).json({ photos: [] });
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching photos" });
   }
 };
 
