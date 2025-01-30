@@ -20,9 +20,15 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
 
   try {
     const photo = await savePhoto(userId, imageUrl);
-    res.status(201).json({ message: "Photo saved successfully", photo });
+
+    const palette = await extractPaletteFromImage(imageUrl);
+
+    await saveColors(photo.id, palette);
+
+    res.status(201).json({ message: "Photo and palette saved successfully", palette });
   } catch (error) {
-    res.status(500).json({ error: "Error saving photo" });
+    console.error("Error uploading photo:", error);
+    res.status(500).json({ error: "Error saving photo and generating palette" });
   }
 };
 
