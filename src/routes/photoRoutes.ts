@@ -7,6 +7,6 @@ const router = express.Router();
 router.post("/", authMiddleware, uploadPhoto);
 router.post("/:photoId/palette", authMiddleware, generatePalette);
 router.get("/:photoId/palette", authMiddleware, getPalette);
-router.get("/photos", authMiddleware, getUserPhotos);
+router.get("/", authMiddleware, getUserPhotos);
 
 export default router;
