@@ -10,9 +10,11 @@ generator client {
 model User {
   id        Int       @id @default(autoincrement())
   name      String
+  username  String    @unique
   email     String    @unique
   password  String
   photos    Photo[]
+  palettes  Palette[]
   followers Follower[] @relation("UserFollowers")
   following Follower[] @relation("UserFollowing")
 }
@@ -21,21 +23,32 @@ model Photo {
   id        Int      @id @default(autoincrement())
   userId    Int
   imageUrl  String
-  title     String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  palette   Palette?
+}
+
+model Palette {
+  id        Int      @id @default(autoincrement())
+  photoId   Int      @unique
+  userId    Int
+  title     String
   isPublic  Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  photo     Photo    @relation(fields: [photoId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
   colors    Color[]
 }
 
 model Color {
-  id       Int     @id @default(autoincrement())
-  hex      String  
-  photoId  Int
-  photo    Photo    @relation(fields: [photoId], references: [id])
-  title    String  @default("Minha Paleta")
-  isPublic Boolean @default(false)
+  id             Int    @id @default(autoincrement())
+  hex            String
+  paletteId      Int
+  originImageUrl String
+
+  palette        Palette  @relation(fields: [paletteId], references: [id])
 }
 
 model Follower {

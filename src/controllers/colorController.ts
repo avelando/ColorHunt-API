@@ -14,7 +14,7 @@ export const updateColor = async (req: Request, res: Response): Promise<void> =>
   try {
     const color = await prisma.color.findUnique({
       where: { id: parseInt(colorId, 10) },
-      include: { photo: true },
+      include: { palette: true },
     });
 
     if (!color) {
@@ -22,7 +22,7 @@ export const updateColor = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    if (color.photo.userId !== userId) {
+    if (color.palette.userId !== userId) {
       res.status(403).json({ error: "Não autorizado a atualizar essa cor." });
       return;
     }
