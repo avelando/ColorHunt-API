@@ -7,7 +7,7 @@ const router = express.Router();
  * @swagger
  * tags:
  *   name: Auth
- *   description: Endpoints de autenticação (registro e login)
+ *   description: Endpoints para gerenciamento de autenticação
  */
 
 /**
@@ -89,7 +89,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /auth/register:
+ * /register:
  *   post:
  *     summary: Registra um novo usuário
  *     tags: [Auth]
@@ -115,7 +115,7 @@ router.post("/register", register);
 
 /**
  * @swagger
- * /auth/login:
+ * /login:
  *   post:
  *     summary: Faz login de um usuário
  *     tags: [Auth]

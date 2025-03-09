@@ -3,9 +3,9 @@ import dotenv from "dotenv";
 import cors from "cors";
 import userRoutes from "./routes/userRoutes";
 import photoRoutes from "./routes/photoRoutes";
-import colorRoutes from "./routes/colorRoutes"
-import palettesRoutes from "./routes/palettesRoutes"
-import authRoutes from "./routes/authRoutes"
+import colorRoutes from "./routes/colorRoutes";
+import palettesRoutes from "./routes/palettesRoutes";
+import authRoutes from "./routes/authRoutes";
 import { swaggerOptions } from "./config/swagger";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
@@ -29,11 +29,12 @@ app.use(
     customCss: darkTheme,
   })
 );
-app.use("/api/", authRoutes)
+
+app.use("/api/", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/photos", photoRoutes);
 app.use("/api/colors", colorRoutes);
-app.use("/api/palettes", palettesRoutes)
+app.use("/api/palettes", palettesRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running!");

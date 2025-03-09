@@ -1,7 +1,7 @@
 import { OAS3Options } from "swagger-jsdoc";
 
 const definition = {
-  openapi: "3.0.0",
+  openapi: "3.1.0",
   info: {
     title: "ColorHunt API",
     version: "1.0.0",
@@ -14,8 +14,8 @@ const definition = {
     },
     {
       url: "https://colorhunt-api-1br0.onrender.com",
-      description: "Servidor remoto (Render)"
-    }
+      description: "Servidor remoto (Render)",
+    },
   ],
 };
 
