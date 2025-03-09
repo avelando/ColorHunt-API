@@ -73,3 +73,23 @@ export const getPalette = async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({ error: "Error fetching palette", details: error });
   }
 };
+
+export const getUserPhotos = async (req: Request, res: Response): Promise<void> => {
+  const userId = (req as any).userId;
+  if (!userId) {
+    res.status(400).json({ error: "User ID is missing or invalid" });
+    return;
+  }
+
+  try {
+    const photos = await prisma.photo.findMany({
+      where: { userId },
+      include: { colors: true },
+    });
+
+    res.status(200).json({ photos });
+  } catch (error) {
+    console.error("❌ Erro ao buscar fotos:", error);
+    res.status(500).json({ error: "Error fetching photos", details: error });
+  }
+};
