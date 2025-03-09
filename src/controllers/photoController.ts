@@ -40,7 +40,6 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
 
         console.log("📷 Foto salva no banco com ID:", photo.id);
 
-        // ✅ Extração de cores imediatamente após o upload
         const palette = await extractPaletteFromImage(result.secure_url);
 
         if (!palette || palette.length !== 5) {
