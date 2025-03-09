@@ -19,11 +19,14 @@ model User {
 
 model Photo {
   id        Int      @id @default(autoincrement())
-  imageUrl  String
   userId    Int
+  imageUrl  String
+  title     String?
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
   user      User     @relation(fields: [userId], references: [id])
   colors    Color[]
-  createdAt DateTime @default(now())
 }
 
 model Color {
