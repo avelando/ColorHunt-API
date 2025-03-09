@@ -6,8 +6,8 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
-router.get("/me", authMiddleware, getUser);
-router.put("/me", authMiddleware, updateUser);
-router.delete("/me", authMiddleware, deleteUser);
+router.get("/me", authMiddleware as any, getUser);
+router.put("/me", authMiddleware as any, updateUser);
+router.delete("/me", authMiddleware as any, deleteUser);
 
 export default router;

@@ -1,11 +1,11 @@
 import express from "express";
-import { uploadPhoto, generatePalette, getPalette } from "../controllers/photoController";
+import { uploadPhoto, getPalette } from "../controllers/photoController";
 import { authMiddleware } from "../middleware/authMiddleware";
+import upload from "../middleware/upload";
 
 const router = express.Router();
 
-router.post("/", authMiddleware, uploadPhoto);
-router.post("/:photoId/palette", authMiddleware, generatePalette);
-router.get("/:photoId/palette", authMiddleware, getPalette);
+router.post("/upload", authMiddleware as any, upload.single("image"), uploadPhoto);
+router.get("/:photoId/palette", authMiddleware as any, getPalette);
 
 export default router;
