@@ -13,7 +13,7 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  const { title, isPublic } = req.body;
+  const { title = "Minha Imagem", isPublic = false } = req.body;
 
   if (!req.file) {
     res.status(400).json({ error: "No image file uploaded" });
@@ -35,7 +35,7 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
           data: {
             userId,
             imageUrl: result.secure_url,
-            title: title || "Minha Imagem",
+            title,
             isPublic: isPublic === "true",
           },
         });
