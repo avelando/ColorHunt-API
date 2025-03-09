@@ -33,9 +33,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       res.status(400).json({ message: "User ID is missing" });
       return;
     }
-
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
-
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -46,7 +44,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       },
       select: { id: true, name: true, username: true, email: true },
     });
-
     res.json({ message: "User updated successfully", updatedUser });
   } catch (error) {
     console.error("Error updating user:", error);
@@ -122,10 +119,8 @@ export const getFollowers = async (req: Request, res: Response): Promise<void> =
       include: { follower: { select: { id: true, name: true, username: true } } },
     });
     res.json(
-      followers.map(
-        (f: { follower: { id: number; name: string; username: string } }) => f.follower
-      )
-    );    
+      followers.map((f: { follower: { id: number; name: string; username: string } }) => f.follower)
+    );
   } catch (error) {
     console.error("Error fetching followers:", error);
     res.status(500).json({ error: "Error fetching followers" });
@@ -144,10 +139,8 @@ export const getFollowing = async (req: Request, res: Response): Promise<void> =
       include: { following: { select: { id: true, name: true, username: true } } },
     });
     res.json(
-      following.map(
-        (f: { follower: { id: number; name: string; username: string } }) => f.follower
-      )
-    );    
+      following.map((f: { following: { id: number; name: string; username: string } }) => f.following)
+    );
   } catch (error) {
     console.error("Error fetching following users:", error);
     res.status(500).json({ error: "Error fetching following users" });

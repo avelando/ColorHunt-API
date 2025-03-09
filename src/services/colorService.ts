@@ -1,17 +1,22 @@
 import prisma from "../config/prismaClient";
 
-export const saveColors = async (photoId: number, colors: string[]) => {
+export const saveColors = async (
+  paletteId: number,
+  originImageUrl: string,
+  colors: string[]
+) => {
   if (!colors || colors.length !== 5) {
     console.log("⚠️ Paleta inválida. Esperado 5 cores, mas recebeu:", colors);
     return;
   }
 
   try {
-    console.log("💾 Salvando cores no banco para photoId:", photoId, "Cores:", colors);
+    console.log("💾 Salvando cores no banco para paletteId:", paletteId, "Cores:", colors);
 
-    const colorData = colors.map((hex) => ({
+    const colorData = colors.map((hex: string) => ({
       hex,
-      photoId,
+      paletteId,
+      originImageUrl,
     }));
 
     await prisma.color.createMany({ data: colorData });

@@ -5,13 +5,15 @@ export const getPhotoById = async (photoId: number, userId: number) => {
 
   const photo = await prisma.photo.findFirst({
     where: { id: photoId, userId },
-    include: { colors: true },
+    include: { palette: { include: { colors: true } } },
   });
 
   if (!photo) {
     console.log("❌ Foto não encontrada!");
+  } else if (!photo.palette) {
+    console.log("✅ Foto encontrada, mas sem paleta associada:", photo.imageUrl);
   } else {
-    console.log("✅ Foto encontrada:", photo.imageUrl);
+    console.log("✅ Foto encontrada com paleta:", photo.imageUrl, "Paleta ID:", photo.palette.id);
   }
 
   return photo;
