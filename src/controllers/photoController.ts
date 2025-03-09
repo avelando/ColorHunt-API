@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { saveColors } from "../services/colorService";
 import { extractPaletteFromImage } from "../utils/imageUtils";
 import prisma from "../config/prismaClient";
+import cloudinary from "../config/cloudinary";
 import { getPhotoById } from "../services/photoService";
 
 export const uploadPhoto = async (req: Request, res: Response): Promise<void> => {
@@ -12,43 +13,53 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  const { imageUrl, title = "Minha Imagem", isPublic = false } = req.body;
+  const { title, isPublic } = req.body;
 
-  if (!imageUrl) {
-    res.status(400).json({ error: "No image URL provided" });
+  if (!req.file) {
+    res.status(400).json({ error: "No image file uploaded" });
     return;
   }
 
   try {
-    console.log("✅ Imagem recebida:", imageUrl);
+    cloudinary.uploader.upload_stream(
+      { folder: "colorhunt", resource_type: "image" },
+      async (error, result) => {
+        if (error || !result) {
+          res.status(500).json({ error: "Cloudinary upload failed" });
+          return;
+        }
 
-    const photo = await prisma.photo.create({
-      data: {
-        userId,
-        imageUrl,
-        title,
-        isPublic: isPublic === "true",
-      },
-    });
+        console.log("✅ Imagem enviada para Cloudinary:", result.secure_url);
 
-    console.log("📷 Foto salva no banco com ID:", photo.id);
+        const photo = await prisma.photo.create({
+          data: {
+            userId,
+            imageUrl: result.secure_url,
+            title: title || "Minha Imagem",
+            isPublic: isPublic === "true",
+          },
+        });
 
-    const palette = await extractPaletteFromImage(imageUrl);
+        console.log("📷 Foto salva no banco com ID:", photo.id);
 
-    if (!palette || palette.length !== 5) {
-      res.status(500).json({ error: "Failed to extract a valid 5-color palette" });
-      return;
-    }
+        const palette = await extractPaletteFromImage(result.secure_url);
 
-    console.log("🎨 Paleta extraída:", palette);
+        if (!palette || palette.length !== 5) {
+          res.status(500).json({ error: "Failed to extract a valid 5-color palette" });
+          return;
+        }
 
-    await saveColors(photo.id, palette);
+        console.log("🎨 Paleta extraída:", palette);
 
-    res.status(201).json({
-      message: "Photo uploaded and palette generated successfully",
-      photo,
-      palette,
-    });
+        await saveColors(photo.id, palette);
+
+        res.status(201).json({
+          message: "Photo uploaded and palette generated successfully",
+          photo,
+          palette,
+        });
+      }
+    ).end(req.file.buffer);
   } catch (error) {
     console.error("❌ Erro ao processar upload:", error);
     res.status(500).json({ error: "Error processing upload", details: error });

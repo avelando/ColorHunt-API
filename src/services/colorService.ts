@@ -9,10 +9,14 @@ export const saveColors = async (photoId: number, colors: string[]) => {
   try {
     console.log("💾 Salvando cores no banco para photoId:", photoId, "Cores:", colors);
 
-    const colorData = colors.map((hex) => ({ hex, photoId }));
+    const colorData = colors.map((hex) => ({
+      hex,
+      photoId,
+    }));
+
     await prisma.color.createMany({ data: colorData });
 
-    console.log("✅ Cores salvas com sucesso!");
+    console.log("✅ Cores salvas com sucesso no banco!");
   } catch (error) {
     console.error("❌ Erro ao salvar cores no banco:", error);
   }
