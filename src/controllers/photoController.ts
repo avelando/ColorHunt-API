@@ -31,33 +31,43 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
 
         console.log("✅ Imagem enviada para Cloudinary:", result.secure_url);
 
-        const photo = await prisma.photo.create({
-          data: {
-            userId,
-            imageUrl: result.secure_url,
-            title: title || "Minha Imagem",
-            isPublic: isPublic === "true",
-          },
-        });
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const photo = await prisma.photo.create({
+              data: {
+                userId,
+                imageUrl: result.secure_url,
+                title: title || "Minha Imagem",
+                isPublic: isPublic === "true",
+              },
+            });
 
-        console.log("📷 Foto salva no banco com ID:", photo.id);
+            console.log("📷 Foto salva no banco com ID:", photo.id);
 
-        const palette = await extractPaletteFromImage(result.secure_url);
+            const palette = await extractPaletteFromImage(result.secure_url);
+            if (!palette || palette.length !== 5) {
+              res.status(500).json({ error: "Failed to extract a valid 5-color palette" });
+              return;
+            }
 
-        if (!palette || palette.length !== 5) {
-          res.status(500).json({ error: "Failed to extract a valid 5-color palette" });
-          return;
+            console.log("🎨 Paleta extraída:", palette);
+            await saveColors(photo.id, palette);
+
+            res.status(201).json({
+              message: "Photo uploaded and palette generated successfully",
+              photo,
+              palette,
+            });
+
+            return;
+          } catch (dbError) {
+            console.error(`❌ Erro ao salvar no banco (tentativa ${attempt}):`, dbError);
+            if (attempt === 3) {
+              res.status(500).json({ error: "Database connection failed after retries" });
+              return;
+            }
+          }
         }
-
-        console.log("🎨 Paleta extraída:", palette);
-
-        await saveColors(photo.id, palette);
-
-        res.status(201).json({
-          message: "Photo uploaded and palette generated successfully",
-          photo,
-          palette,
-        });
       }
     ).end(req.file.buffer);
   } catch (error) {
