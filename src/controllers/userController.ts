@@ -41,12 +41,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "2h" }
+    );
 
-    res.json({ message: "Login successful", token });
+    res.json({ message: "Login successful", token, userId: user.id });
   } catch (error) {
+    console.error("❌ Erro ao processar login:", error);
     res.status(500).json({ error: "Error logging in" });
   }
 };
