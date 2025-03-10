@@ -11,7 +11,13 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
     }
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, username: true, email: true },
+      select: { 
+        id: true, 
+        name: true, 
+        username: true, 
+        email: true,
+        profilePhoto: true,
+      },
     });
     if (!user) {
       res.status(404).json({ message: "User not found" });
@@ -41,7 +47,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
         email,
         ...(hashedPassword && { password: hashedPassword }),
       },
-      select: { id: true, name: true, username: true, email: true },
+      select: { id: true, name: true, username: true, email: true, profilePhoto: true },
     });
     res.json({ message: "User updated successfully", updatedUser });
   } catch (error) {
@@ -170,5 +176,33 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     console.error("Error fetching user stats:", error);
     res.status(500).json({ error: "Error fetching user stats", details: error });
+  }
+};
+
+export const updateProfilePhoto = async (req: Request, res: Response): Promise<void> => {
+  const userId = (req as any).userId;
+  const { profilePhotoUrl } = req.body;
+
+  if (!userId) {
+    res.status(400).json({ error: "User ID is missing or invalid" });
+    return;
+  }
+  if (!profilePhotoUrl) {
+    res.status(400).json({ error: "Profile photo URL is required" });
+    return;
+  }
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { profilePhoto: profilePhotoUrl },
+      select: { id: true, name: true, username: true, email: true, profilePhoto: true },
+    });
+    res.status(200).json({
+      message: "Profile photo updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating profile photo:", error);
+    res.status(500).json({ error: "Error updating profile photo", details: error });
   }
 };

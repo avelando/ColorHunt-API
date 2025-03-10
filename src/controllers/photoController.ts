@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../config/prismaClient";
 import { extractPaletteFromImage } from "../utils/imageUtils";
-import { saveColors } from "../services/colorService";
 
 export const uploadPhoto = async (req: Request, res: Response): Promise<void> => {
   const userId = (req as any).userId;

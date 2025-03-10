@@ -1,5 +1,13 @@
 import express from "express";
-import { getUser, updateUser, deleteUser, getFollowers, getFollowing, getUserStats } from "../controllers/userController";
+import {
+  getUser,
+  updateUser,
+  deleteUser,
+  getFollowers,
+  getFollowing,
+  getUserStats,
+  updateProfilePhoto,
+} from "../controllers/userController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = express.Router();
@@ -39,6 +47,9 @@ const router = express.Router();
  *                 email:
  *                   type: string
  *                   example: "john@example.com"
+ *                 profilePhoto:
+ *                   type: string
+ *                   example: "https://res.cloudinary.com/your-cloudinary/image/upload/v123/profile.jpg"
  *       400:
  *         description: "User ID is missing"
  *       404:
@@ -137,6 +148,61 @@ router.put("/me", authMiddleware as any, updateUser);
  *         description: "Erro interno do servidor"
  */
 router.delete("/me", authMiddleware as any, deleteUser);
+
+/**
+ * @swagger
+ * /users/me/profile-photo:
+ *   patch:
+ *     summary: "Atualiza a foto de perfil do usuário autenticado"
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       description: "URL da nova foto de perfil"
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profilePhotoUrl:
+ *                 type: string
+ *                 example: "https://res.cloudinary.com/your-cloudinary/image/upload/v123/profile.jpg"
+ *     responses:
+ *       200:
+ *         description: "Foto de perfil atualizada com sucesso"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Profile photo updated successfully"
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: number
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "John Doe"
+ *                     username:
+ *                       type: string
+ *                       example: "johndoe"
+ *                     email:
+ *                       type: string
+ *                       example: "john@example.com"
+ *                     profilePhoto:
+ *                       type: string
+ *                       example: "https://res.cloudinary.com/your-cloudinary/image/upload/v123/profile.jpg"
+ *       400:
+ *         description: "User ID is missing or profile photo URL is missing"
+ *       500:
+ *         description: "Erro interno do servidor"
+ */
+router.patch("/me/profile-photo", authMiddleware as any, updateProfilePhoto);
 
 /**
  * @swagger

@@ -8,15 +8,16 @@ generator client {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  username  String    @unique
-  email     String    @unique
-  password  String
-  photos    Photo[]
-  palettes  Palette[]
-  followers Follower[] @relation("UserFollowers")
-  following Follower[] @relation("UserFollowing")
+  id           Int       @id @default(autoincrement())
+  name         String
+  username     String    @unique
+  email        String    @unique
+  password     String
+  profilePhoto String?
+  photos       Photo[]
+  palettes     Palette[]
+  followers    Follower[] @relation("UserFollowers")
+  following    Follower[] @relation("UserFollowing")
 }
 
 model Photo {
