@@ -206,3 +206,41 @@ export const updateProfilePhoto = async (req: Request, res: Response): Promise<v
     res.status(500).json({ error: "Error updating profile photo", details: error });
   }
 };
+
+export const searchUsersByUsername = async (req: Request, res: Response): Promise<void> => {
+  const { q } = req.query;
+
+  if (!q || typeof q !== "string") {
+    res.status(400).json({ error: "Search query (q) is missing or invalid" });
+    return;
+  }
+
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        username: {
+          contains: q,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        profilePhoto: true,
+      },
+    });
+
+    if (users.length === 0) {
+      res.status(200).json({ message: "Nenhum usuário encontrado." });
+      return;
+    }
+
+    res.status(200).json({ users });
+    return;
+  } catch (error) {
+    console.error("Error searching users by username:", error);
+    res.status(500).json({ error: "Error searching users by username", details: error });
+    return;
+  }
+};

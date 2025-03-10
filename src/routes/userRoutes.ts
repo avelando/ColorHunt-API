@@ -7,6 +7,7 @@ import {
   getFollowing,
   getUserStats,
   updateProfilePhoto,
+  searchUsersByUsername
 } from "../controllers/userController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
@@ -324,5 +325,52 @@ router.get("/:userId/following", authMiddleware as any, getFollowing);
  *         description: "Erro interno do servidor"
  */
 router.get("/:userId/stats", authMiddleware as any, getUserStats);
+
+/**
+ * @swagger
+ * /users/search:
+ *   get:
+ *     summary: "Pesquisa usuários apenas por username"
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: "Texto a ser buscado no username"
+ *     responses:
+ *       200:
+ *         description: "Lista de usuários encontrados ou mensagem de nenhum usuário encontrado"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: number
+ *                         example: 1
+ *                       name:
+ *                         type: string
+ *                         example: "John Doe"
+ *                       username:
+ *                         type: string
+ *                         example: "johndoe"
+ *                       profilePhoto:
+ *                         type: string
+ *                         example: "https://res.cloudinary.com/.../profile.jpg"
+ *       400:
+ *         description: "Search query is missing or invalid"
+ *       500:
+ *         description: "Erro interno do servidor"
+ */
+router.get("/search", authMiddleware as any, searchUsersByUsername);
 
 export default router;
