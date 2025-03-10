@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import prisma from "../config/prismaClient";
 
 export const getUser = async (req: Request, res: Response): Promise<void> => {
@@ -144,5 +143,32 @@ export const getFollowing = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     console.error("Error fetching following users:", error);
     res.status(500).json({ error: "Error fetching following users" });
+  }
+};
+
+export const getUserStats = async (req: Request, res: Response): Promise<void> => {
+  const userId = parseInt(req.params.userId, 10);
+  if (isNaN(userId)) {
+    res.status(400).json({ error: "User ID is required and must be a number" });
+    return;
+  }
+  try {
+    const palettesCount = await prisma.palette.count({
+      where: { userId },
+    });
+    const followersCount = await prisma.follower.count({
+      where: { followingId: userId },
+    });
+    const followingCount = await prisma.follower.count({
+      where: { followerId: userId },
+    });
+    res.status(200).json({
+      palettes: palettesCount,
+      followers: followersCount,
+      following: followingCount,
+    });
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    res.status(500).json({ error: "Error fetching user stats", details: error });
   }
 };

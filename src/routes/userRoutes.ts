@@ -1,5 +1,5 @@
 import express from "express";
-import { getUser, updateUser, deleteUser } from "../controllers/userController";
+import { getUser, updateUser, deleteUser, getFollowers, getFollowing, getUserStats } from "../controllers/userController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = express.Router();
@@ -137,5 +137,126 @@ router.put("/me", authMiddleware as any, updateUser);
  *         description: "Erro interno do servidor"
  */
 router.delete("/me", authMiddleware as any, deleteUser);
+
+/**
+ * @swagger
+ * /users/{userId}/followers:
+ *   get:
+ *     summary: "Retorna os seguidores do usuário especificado"
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: "ID do usuário"
+ *     responses:
+ *       200:
+ *         description: "Lista de seguidores retornada com sucesso"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: number
+ *                     example: 2
+ *                   name:
+ *                     type: string
+ *                     example: "Jane Doe"
+ *                   username:
+ *                     type: string
+ *                     example: "janedoe"
+ *       400:
+ *         description: "User ID is required and must be a number"
+ *       500:
+ *         description: "Erro interno do servidor"
+ */
+router.get("/:userId/followers", authMiddleware as any, getFollowers);
+
+/**
+ * @swagger
+ * /users/{userId}/following:
+ *   get:
+ *     summary: "Retorna os usuários que o usuário especificado está seguindo"
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: "ID do usuário"
+ *     responses:
+ *       200:
+ *         description: "Lista de usuários que o usuário está seguindo retornada com sucesso"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: number
+ *                     example: 3
+ *                   name:
+ *                     type: string
+ *                     example: "Bob Smith"
+ *                   username:
+ *                     type: string
+ *                     example: "bobsmith"
+ *       400:
+ *         description: "User ID is required and must be a number"
+ *       500:
+ *         description: "Erro interno do servidor"
+ */
+router.get("/:userId/following", authMiddleware as any, getFollowing);
+
+/**
+ * @swagger
+ * /users/{userId}/stats:
+ *   get:
+ *     summary: "Retorna as estatísticas do usuário, incluindo a contagem de paletas, seguidores e seguindo"
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: "ID do usuário"
+ *     responses:
+ *       200:
+ *         description: "Estatísticas do usuário retornadas com sucesso"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 palettes:
+ *                   type: number
+ *                   example: 5
+ *                 followers:
+ *                   type: number
+ *                   example: 20
+ *                 following:
+ *                   type: number
+ *                   example: 15
+ *       400:
+ *         description: "User ID is required and must be a number"
+ *       500:
+ *         description: "Erro interno do servidor"
+ */
+router.get("/:userId/stats", authMiddleware as any, getUserStats);
 
 export default router;
