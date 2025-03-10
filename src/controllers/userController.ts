@@ -121,11 +121,18 @@ export const getFollowers = async (req: Request, res: Response): Promise<void> =
   try {
     const followers = await prisma.follower.findMany({
       where: { followingId: userId },
-      include: { follower: { select: { id: true, name: true, username: true } } },
+      include: { 
+        follower: { 
+          select: { 
+            id: true, 
+            name: true, 
+            username: true, 
+            profilePhoto: true 
+          } 
+        } 
+      },
     });
-    res.json(
-      followers.map((f: { follower: { id: number; name: string; username: string } }) => f.follower)
-    );
+    res.json(followers.map((f) => f.follower));
   } catch (error) {
     console.error("Error fetching followers:", error);
     res.status(500).json({ error: "Error fetching followers" });
@@ -141,11 +148,18 @@ export const getFollowing = async (req: Request, res: Response): Promise<void> =
   try {
     const following = await prisma.follower.findMany({
       where: { followerId: userId },
-      include: { following: { select: { id: true, name: true, username: true } } },
+      include: { 
+        following: { 
+          select: { 
+            id: true, 
+            name: true, 
+            username: true,
+            profilePhoto: true 
+          } 
+        } 
+      },
     });
-    res.json(
-      following.map((f: { following: { id: number; name: string; username: string } }) => f.following)
-    );
+    res.json(following.map((f) => f.following));
   } catch (error) {
     console.error("Error fetching following users:", error);
     res.status(500).json({ error: "Error fetching following users" });
@@ -209,12 +223,10 @@ export const updateProfilePhoto = async (req: Request, res: Response): Promise<v
 
 export const searchUsersByUsername = async (req: Request, res: Response): Promise<void> => {
   const { q } = req.query;
-
   if (!q || typeof q !== "string") {
     res.status(400).json({ error: "Search query (q) is missing or invalid" });
     return;
   }
-
   try {
     const users = await prisma.user.findMany({
       where: {
@@ -230,17 +242,13 @@ export const searchUsersByUsername = async (req: Request, res: Response): Promis
         profilePhoto: true,
       },
     });
-
     if (users.length === 0) {
       res.status(200).json({ message: "Nenhum usuário encontrado." });
       return;
     }
-
     res.status(200).json({ users });
-    return;
   } catch (error) {
     console.error("Error searching users by username:", error);
     res.status(500).json({ error: "Error searching users by username", details: error });
-    return;
   }
 };
