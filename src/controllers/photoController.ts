@@ -41,8 +41,8 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
     const colorData = extractedColors.map((hex: string) => ({
       hex,
       paletteId: palette.id,
-      originImageUrl: imageUrl,
-    }));
+      photoId: photo.id,
+    }));    
     await prisma.color.createMany({ data: colorData });
 
     const createdPalette = await prisma.palette.findUnique({

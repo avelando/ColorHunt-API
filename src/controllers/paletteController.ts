@@ -2,6 +2,65 @@ import { Request, Response } from "express";
 import prisma from "../config/prismaClient";
 import { extractPaletteFromImage } from "../utils/imageUtils";
 
+export const uploadPhoto = async (req: Request, res: Response): Promise<void> => {
+  const userId = (req as any).userId;
+  const { imageUrl, title, isPublic } = req.body;
+  if (!userId) {
+    res.status(400).json({ error: "User ID is missing or invalid" });
+    return;
+  }
+  if (!imageUrl) {
+    res.status(400).json({ error: "No image URL provided" });
+    return;
+  }
+  try {
+    const photo = await prisma.photo.create({
+      data: {
+        userId,
+        imageUrl,
+      },
+    });
+    console.log("📷 Foto salva no banco com ID:", photo.id);
+
+    const extractedColors = await extractPaletteFromImage(imageUrl);
+    if (!extractedColors || extractedColors.length !== 5) {
+      res.status(500).json({ error: "Failed to extract a valid 5-color palette" });
+      return;
+    }
+    console.log("🎨 Paleta extraída:", extractedColors);
+
+    const palette = await prisma.palette.create({
+      data: {
+        userId,
+        photoId: photo.id,
+        title: title || "Minha Paleta",
+        isPublic: isPublic === "true" || isPublic === true,
+      },
+    });
+
+    // Mapeia as cores usando photoId em vez de originImageUrl
+    const colorData = extractedColors.map((hex: string) => ({
+      hex,
+      paletteId: palette.id,
+      photoId: photo.id,
+    }));
+    await prisma.color.createMany({ data: colorData });
+
+    const createdPalette = await prisma.palette.findUnique({
+      where: { id: palette.id },
+      include: { photo: true, colors: true },
+    });
+    res.status(201).json({
+      message: "Photo uploaded and palette generated successfully",
+      photo,
+      palette: createdPalette,
+    });
+  } catch (error) {
+    console.error("❌ Erro ao processar upload:", error);
+    res.status(500).json({ error: "Error processing upload", details: error });
+  }
+};
+
 export const createPalette = async (req: Request, res: Response): Promise<void> => {
   const userId = (req as any).userId;
   const { imageUrl, title, isPublic } = req.body;
@@ -36,7 +95,7 @@ export const createPalette = async (req: Request, res: Response): Promise<void> 
     const colorData = extractedColors.map((hex: string) => ({
       hex,
       paletteId: palette.id,
-      originImageUrl: imageUrl,
+      photoId: photo.id,
     }));
     await prisma.color.createMany({ data: colorData });
 

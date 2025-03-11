@@ -2,7 +2,7 @@ import prisma from "../config/prismaClient";
 
 export const saveColors = async (
   paletteId: number,
-  originImageUrl: string,
+  photoId: number,
   colors: string[]
 ) => {
   if (!colors || colors.length !== 5) {
@@ -16,7 +16,7 @@ export const saveColors = async (
     const colorData = colors.map((hex: string) => ({
       hex,
       paletteId,
-      originImageUrl,
+      photoId,
     }));
 
     await prisma.color.createMany({ data: colorData });
