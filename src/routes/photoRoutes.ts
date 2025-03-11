@@ -1,5 +1,5 @@
 import express from "express";
-import { uploadPhoto, getPalette, getUserPhotos } from "../controllers/photoController";
+import { uploadPhoto, getPalette, getUserPhotos, deletePhoto } from "../controllers/photoController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = express.Router();
@@ -154,5 +154,7 @@ router.get("/:photoId/palette", authMiddleware as any, getPalette);
  *         description: "Erro interno do servidor"
  */
 router.get("/user", authMiddleware as any, getUserPhotos);
+
+router.delete("/:photoId", authMiddleware as any, deletePhoto);
 
 export default router;
