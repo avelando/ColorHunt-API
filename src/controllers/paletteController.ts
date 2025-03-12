@@ -21,14 +21,12 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
       },
     });
     console.log("📷 Foto salva no banco com ID:", photo.id);
-
     const extractedColors = await extractPaletteFromImage(imageUrl);
     if (!extractedColors || extractedColors.length !== 5) {
       res.status(500).json({ error: "Failed to extract a valid 5-color palette" });
       return;
     }
     console.log("🎨 Paleta extraída:", extractedColors);
-
     const palette = await prisma.palette.create({
       data: {
         userId,
@@ -37,15 +35,12 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
         isPublic: isPublic === "true" || isPublic === true,
       },
     });
-
-    // Mapeia as cores usando photoId em vez de originImageUrl
     const colorData = extractedColors.map((hex: string) => ({
       hex,
       paletteId: palette.id,
       photoId: photo.id,
     }));
     await prisma.color.createMany({ data: colorData });
-
     const createdPalette = await prisma.palette.findUnique({
       where: { id: palette.id },
       include: { photo: true, colors: true },
@@ -76,13 +71,11 @@ export const createPalette = async (req: Request, res: Response): Promise<void> 
     const photo = await prisma.photo.create({
       data: { userId, imageUrl },
     });
-
     const extractedColors = await extractPaletteFromImage(imageUrl);
     if (!extractedColors || extractedColors.length !== 5) {
       res.status(500).json({ error: "Failed to extract a valid 5-color palette" });
       return;
     }
-
     const palette = await prisma.palette.create({
       data: {
         userId,
@@ -91,14 +84,12 @@ export const createPalette = async (req: Request, res: Response): Promise<void> 
         isPublic: isPublic === "true" || isPublic === true,
       },
     });
-
     const colorData = extractedColors.map((hex: string) => ({
       hex,
       paletteId: palette.id,
       photoId: photo.id,
     }));
     await prisma.color.createMany({ data: colorData });
-
     const createdPalette = await prisma.palette.findUnique({
       where: { id: palette.id },
       include: { photo: true, colors: true },
@@ -208,8 +199,14 @@ export const deletePalette = async (req: Request, res: Response): Promise<void> 
       res.status(403).json({ error: "Not authorized to delete this palette" });
       return;
     }
+    const photoId = palette.photoId;
     await prisma.color.deleteMany({ where: { paletteId } });
     await prisma.palette.delete({ where: { id: paletteId } });
+    const remainingPalettes = await prisma.palette.count({ where: { photoId } });
+    const remainingColors = await prisma.color.count({ where: { photoId } });
+    if (remainingPalettes === 0 && remainingColors === 0) {
+      await prisma.photo.delete({ where: { id: photoId } });
+    }
     res.status(200).json({ message: "Palette deleted successfully" });
   } catch (error) {
     console.error("Error deleting palette:", error);
