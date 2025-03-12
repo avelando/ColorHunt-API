@@ -272,6 +272,8 @@ export const searchUsersByUsername = async (req: Request, res: Response): Promis
 
 export const getUserProfile = async (req: Request, res: Response): Promise<void> => {
   const userId = parseInt(req.params.userId, 10);
+  const loggedUserId = (req as any).userId;
+
   if (isNaN(userId)) {
     res.status(400).json({ error: "User ID é necessário e deve ser um número válido" });
     return;
@@ -292,6 +294,10 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
       res.status(404).json({ error: "Usuário não encontrado" });
       return;
     }
+
+    const isFollowing = await prisma.follower.findFirst({
+      where: { followerId: loggedUserId, followingId: userId },
+    });
 
     const followersCount = await prisma.follower.count({
       where: { followingId: userId },
@@ -331,6 +337,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
         followingCount,
         totalPalettesCount,
         palettes: formattedPalettes,
+        isFollowing: !!isFollowing,
       },
     });
   } catch (error) {
