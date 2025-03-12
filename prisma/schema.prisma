@@ -61,4 +61,6 @@ model Follower {
   followingId Int
   follower    User @relation("UserFollowers", fields: [followerId], references: [id])
   following   User @relation("UserFollowing", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
 }

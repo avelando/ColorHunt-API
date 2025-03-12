@@ -284,18 +284,22 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
         id: true, 
         name: true, 
         username: true, 
-        profilePhoto: true 
+        profilePhoto: true,
+        palettes: { 
+          where: { isPublic: true }, 
+          include: { photo: true, colors: true }
+        }
       },
     });
 
     if (!user) {
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({ error: "Usuário não encontrado" });
       return;
     }
 
     res.status(200).json({ user });
   } catch (error) {
-    console.error("Error fetching user profile:", error);
-    res.status(500).json({ error: "Error fetching user profile", details: error });
+    console.error("Erro ao buscar perfil do usuário:", error);
+    res.status(500).json({ error: "Erro ao buscar perfil do usuário", details: error });
   }
 };
