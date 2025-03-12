@@ -11,6 +11,7 @@ import {
   getUserProfile
 } from "../controllers/userController";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { getFollowersWithStatus, getFollowingWithStatus } from "../controllers/paletteController";
 
 const router = express.Router();
 
@@ -375,5 +376,11 @@ router.get("/:userId/stats", authMiddleware as any, getUserStats);
 router.get("/search", authMiddleware as any, searchUsersByUsername);
 
 router.get("/users/:userId/profile", getUserProfile);
+
+router.get("/:userId/followersWithStatus", getFollowersWithStatus);
+
+router.get("/:userId/followingWithStatus", getFollowingWithStatus);
+
+router.get("/:userId/isFollowing/:targetUserId", getUserStats);
 
 export default router;

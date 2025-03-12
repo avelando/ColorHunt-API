@@ -337,3 +337,88 @@ export const getPaletteDetails = async (req: Request, res: Response): Promise<vo
     res.status(500).json({ error: "Erro ao buscar detalhes da paleta", details: error });
   }
 };
+
+export const getUserStats = async (req: Request, res: Response): Promise<void> => {
+  const userId = parseInt(req.params.userId, 10);
+
+  if (isNaN(userId)) {
+    res.status(400).json({ error: "User ID is required and must be a number" });
+    return;
+  }
+
+  try {
+    const followersCount = await prisma.follower.count({ where: { followingId: userId } });
+    const followingCount = await prisma.follower.count({ where: { followerId: userId } });
+
+    res.status(200).json({
+      followers: followersCount,
+      following: followingCount,
+    });
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    res.status(500).json({ error: "Error fetching user stats", details: error });
+  }
+};
+
+export const getFollowersWithStatus = async (req: Request, res: Response): Promise<void> => {
+  const userId = parseInt(req.params.userId, 10);
+
+  if (isNaN(userId)) {
+    res.status(400).json({ error: "User ID is required and must be a number" });
+    return;
+  }
+
+  try {
+    const followers = await prisma.follower.findMany({
+      where: { followingId: userId },
+      include: { follower: { select: { id: true, name: true, username: true, profilePhoto: true } } },
+    });
+
+    const followersWithStatus = await Promise.all(
+      followers.map(async follower => {
+        const isFollowingBack = await prisma.follower.findFirst({
+          where: { followerId: userId, followingId: follower.follower.id },
+        });
+
+        return { ...follower.follower, isFollowingBack: !!isFollowingBack };
+      })
+    );
+
+    res.status(200).json(followersWithStatus);
+  } catch (error) {
+    console.error("Error fetching followers with status:", error);
+    res.status(500).json({ error: "Error fetching followers with status" });
+  }
+};
+
+export const getFollowingWithStatus = async (req: Request, res: Response): Promise<void> => {
+  const userId = parseInt(req.params.userId, 10);
+
+  if (isNaN(userId)) {
+    res.status(400).json({ error: "User ID is required and must be a number" });
+    return;
+  }
+
+  try {
+    const following = await prisma.follower.findMany({
+      where: { followerId: userId },
+      include: { following: { select: { id: true, name: true, username: true, profilePhoto: true } } },
+    });
+
+    const followingWithStatus = await Promise.all(
+      following.map(async followedUser => {
+        const followsBack = await prisma.follower.findFirst({
+          where: { followerId: followedUser.following.id, followingId: userId },
+        });
+
+        return { ...followedUser.following, followsBack: !!followsBack };
+      })
+    );
+
+    res.status(200).json(followingWithStatus);
+  } catch (error) {
+    console.error("Error fetching following with status:", error);
+    res.status(500).json({ error: "Error fetching following with status" });
+  }
+};
+
