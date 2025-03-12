@@ -6,6 +6,7 @@ import {
   getFollowers,
   getFollowing,
   getUserStats,
+  followUser,
   updateProfilePhoto,
   searchUsersByUsername,
   getUserProfile
@@ -382,5 +383,7 @@ router.get("/:userId/followersWithStatus", getFollowersWithStatus);
 router.get("/:userId/followingWithStatus", getFollowingWithStatus);
 
 router.get("/:userId/isFollowing/:targetUserId", getUserStats);
+
+router.post("/follow", followUser)
 
 export default router;
