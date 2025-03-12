@@ -5,6 +5,8 @@ import {
   getPalette,
   updatePalette,
   deletePalette,
+  getUserPublicPalettes,
+  getExplorePalettes,
 } from "../controllers/paletteController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
@@ -260,5 +262,9 @@ router.patch("/:paletteId", authMiddleware as any, updatePalette);
  *         description: Erro interno do servidor
  */
 router.delete("/:paletteId", authMiddleware as any, deletePalette);
+
+router.get("/users/:userId/palettes", getUserPublicPalettes);
+
+router.get("/palettes/explore", getExplorePalettes);
 
 export default router;

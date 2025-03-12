@@ -113,7 +113,11 @@ export const getUserPalettes = async (req: Request, res: Response): Promise<void
   try {
     const palettes = await prisma.palette.findMany({
       where: { userId },
-      include: { photo: true, colors: true },
+      include: {
+        photo: true,
+        colors: true,
+        user: { select: { id: true, name: true, username: true } }
+      },
     });
     res.status(200).json({ palettes });
   } catch (error) {
@@ -132,7 +136,11 @@ export const getPalette = async (req: Request, res: Response): Promise<void> => 
   try {
     const palette = await prisma.palette.findFirst({
       where: { id: paletteId, userId },
-      include: { photo: true, colors: true },
+      include: {
+        photo: true,
+        colors: true,
+        user: { select: { id: true, name: true, username: true } }
+      },
     });
     if (!palette) {
       res.status(404).json({ error: "Palette not found" });
@@ -228,5 +236,50 @@ export const getPublicPalettes = async (req: Request, res: Response): Promise<vo
   } catch (error) {
     console.error("Error fetching public palettes:", error);
     res.status(500).json({ error: "Error fetching public palettes", details: error });
+  }
+};
+
+export const getUserPublicPalettes = async (req: Request, res: Response): Promise<void> => {
+  const userId = parseInt(req.params.userId, 10);
+  if (isNaN(userId)) {
+    res.status(400).json({ error: "User ID is required and must be a number" });
+    return;
+  }
+
+  try {
+    const palettes = await prisma.palette.findMany({
+      where: { userId, isPublic: true },
+      include: {
+        photo: true,
+        colors: true,
+        user: { select: { id: true, name: true, username: true, profilePhoto: true } },
+      },
+    });
+
+    res.status(200).json({ palettes });
+  } catch (error) {
+    console.error("Error fetching public palettes:", error);
+    res.status(500).json({ error: "Error fetching public palettes", details: error });
+  }
+};
+
+export const getExplorePalettes = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page, limit } = req.query;
+    const pageNumber = page ? parseInt(page as string, 10) : 1;
+    const pageSize = limit ? parseInt(limit as string, 10) : 10;
+    const offset = (pageNumber - 1) * pageSize;
+
+    const palettes = await prisma.$queryRaw`
+      SELECT * FROM "Palette"
+      WHERE "isPublic" = true
+      ORDER BY RANDOM()
+      LIMIT ${pageSize} OFFSET ${offset}
+    `;
+
+    res.status(200).json({ palettes });
+  } catch (error) {
+    console.error("Error fetching explore palettes:", error);
+    res.status(500).json({ error: "Error fetching explore palettes", details: error });
   }
 };

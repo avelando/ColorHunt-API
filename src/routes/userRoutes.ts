@@ -7,7 +7,8 @@ import {
   getFollowing,
   getUserStats,
   updateProfilePhoto,
-  searchUsersByUsername
+  searchUsersByUsername,
+  getUserProfile
 } from "../controllers/userController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
@@ -372,5 +373,7 @@ router.get("/:userId/stats", authMiddleware as any, getUserStats);
  *         description: "Erro interno do servidor"
  */
 router.get("/search", authMiddleware as any, searchUsersByUsername);
+
+router.get("/users/:userId/profile", getUserProfile);
 
 export default router;

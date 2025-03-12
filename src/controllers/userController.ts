@@ -252,3 +252,33 @@ export const searchUsersByUsername = async (req: Request, res: Response): Promis
     res.status(500).json({ error: "Error searching users by username", details: error });
   }
 };
+
+export const getUserProfile = async (req: Request, res: Response): Promise<void> => {
+  const userId = parseInt(req.params.userId, 10);
+  if (isNaN(userId)) {
+    res.status(400).json({ error: "User ID is required and must be a number" });
+    return;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        id: true, 
+        name: true, 
+        username: true, 
+        profilePhoto: true 
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ error: "Error fetching user profile", details: error });
+  }
+};
