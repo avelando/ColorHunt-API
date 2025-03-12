@@ -307,3 +307,33 @@ export const getExplorePalettes = async (req: Request, res: Response): Promise<v
     res.status(500).json({ error: "Error fetching explore palettes", details: error });
   }
 };
+
+export const getPaletteDetails = async (req: Request, res: Response): Promise<void> => {
+  const paletteId = parseInt(req.params.paletteId, 10);
+
+  if (isNaN(paletteId)) {
+    res.status(400).json({ error: "ID da paleta inválido" });
+    return;
+  }
+
+  try {
+    const palette = await prisma.palette.findUnique({
+      where: { id: paletteId },
+      include: {
+        photo: { select: { id: true, imageUrl: true } },
+        colors: true,
+        user: { select: { id: true, name: true, username: true, profilePhoto: true } },
+      },
+    });
+
+    if (!palette) {
+      res.status(404).json({ error: "Paleta não encontrada" });
+      return;
+    }
+
+    res.status(200).json({ palette });
+  } catch (error) {
+    console.error("❌ Erro ao buscar detalhes da paleta:", error);
+    res.status(500).json({ error: "Erro ao buscar detalhes da paleta", details: error });
+  }
+};
