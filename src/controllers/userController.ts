@@ -79,18 +79,35 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 export const followUser = async (req: Request, res: Response): Promise<void> => {
   const userId = (req as any).userId;
   const { followId } = req.body;
+
   if (!userId || !followId) {
     res.status(400).json({ error: "Missing userId or followId" });
     return;
   }
+
   try {
+    if (userId === followId) {
+      res.status(400).json({ error: "Você não pode seguir a si mesmo." });
+      return;
+    }
+
+    const existingFollow = await prisma.follower.findFirst({
+      where: { followerId: userId, followingId: followId },
+    });
+
+    if (existingFollow) {
+      res.status(400).json({ error: "Você já segue este usuário." });
+      return;
+    }
+
     await prisma.follower.create({
       data: { followerId: userId, followingId: followId },
     });
-    res.json({ message: "Now following user!" });
+
+    res.json({ message: "Agora você está seguindo este usuário!" });
   } catch (error) {
-    console.error("Error following user:", error);
-    res.status(500).json({ error: "Error following user" });
+    console.error("Erro ao seguir usuário:", error);
+    res.status(500).json({ error: "Erro ao seguir usuário." });
   }
 };
 

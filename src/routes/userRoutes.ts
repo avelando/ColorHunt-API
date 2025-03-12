@@ -384,6 +384,6 @@ router.get("/:userId/followingWithStatus", getFollowingWithStatus);
 
 router.get("/:userId/isFollowing/:targetUserId", getUserStats);
 
-router.post("/follow", followUser)
+router.post("/follow", authMiddleware as any, followUser)
 
 export default router;
