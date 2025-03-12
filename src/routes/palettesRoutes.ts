@@ -7,6 +7,7 @@ import {
   deletePalette,
   getUserPublicPalettes,
   getExplorePalettes,
+  getPaletteDetails,
 } from "../controllers/paletteController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
@@ -265,6 +266,8 @@ router.delete("/:paletteId", authMiddleware as any, deletePalette);
 
 router.get("/users/:userId/palettes", getUserPublicPalettes);
 
-router.get("/palettes/explore", getExplorePalettes);
+router.get("/explore", getExplorePalettes);
+
+router.get("/:paletteId/details", getPaletteDetails);
 
 export default router;
