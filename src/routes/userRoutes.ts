@@ -9,7 +9,8 @@ import {
   followUser,
   updateProfilePhoto,
   searchUsersByUsername,
-  getUserProfile
+  getUserProfile,
+  unfollowUser
 } from "../controllers/userController";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { getFollowersWithStatus, getFollowingWithStatus } from "../controllers/paletteController";
@@ -385,5 +386,7 @@ router.get("/:userId/followingWithStatus", getFollowingWithStatus);
 router.get("/:userId/isFollowing/:targetUserId", getUserStats);
 
 router.post("/follow", authMiddleware as any, followUser)
+
+router.delete("/users/unfollow", authMiddleware as any, unfollowUser);
 
 export default router;
