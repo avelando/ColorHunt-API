@@ -5,6 +5,7 @@ import { extractPaletteFromImage } from "../utils/imageUtils";
 export const uploadPhoto = async (req: Request, res: Response): Promise<void> => {
   const userId = (req as any).userId;
   const { imageUrl, title, isPublic } = req.body;
+
   if (!userId) {
     res.status(400).json({ error: "User ID is missing or invalid" });
     return;
@@ -13,20 +14,22 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
     res.status(400).json({ error: "No image URL provided" });
     return;
   }
+
   try {
     const photo = await prisma.photo.create({
-      data: {
-        userId,
-        imageUrl,
-      },
+      data: { userId, imageUrl },
     });
+
     console.log("📷 Foto salva no banco com ID:", photo.id);
+
     const extractedColors = await extractPaletteFromImage(imageUrl);
     if (!extractedColors || extractedColors.length !== 5) {
       res.status(500).json({ error: "Failed to extract a valid 5-color palette" });
       return;
     }
+
     console.log("🎨 Paleta extraída:", extractedColors);
+
     const palette = await prisma.palette.create({
       data: {
         userId,
@@ -35,20 +38,24 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
         isPublic: isPublic === "true" || isPublic === true,
       },
     });
+
     const colorData = extractedColors.map((hex: string) => ({
       hex,
       paletteId: palette.id,
       photoId: photo.id,
     }));
+
     await prisma.color.createMany({ data: colorData });
+
     const createdPalette = await prisma.palette.findUnique({
       where: { id: palette.id },
-      include: { 
-        photo: true, 
+      include: {
+        photo: true,
         colors: true,
-        user: { select: { id: true, name: true, username: true, profilePhoto: true } }
+        user: { select: { id: true, name: true, username: true, profilePhoto: true } },
       },
-    });    
+    });
+
     res.status(201).json({
       message: "Photo uploaded and palette generated successfully",
       photo,
@@ -110,19 +117,22 @@ export const createPalette = async (req: Request, res: Response): Promise<void> 
 
 export const getUserPalettes = async (req: Request, res: Response): Promise<void> => {
   const userId = (req as any).userId;
+  
   if (!userId) {
     res.status(400).json({ error: "User ID missing" });
     return;
   }
+
   try {
     const palettes = await prisma.palette.findMany({
       where: { userId },
       include: {
         photo: true,
         colors: true,
-        user: { select: { id: true, name: true, username: true } }
+        user: { select: { id: true, name: true, username: true, profilePhoto: true } },
       },
     });
+
     res.status(200).json({ palettes });
   } catch (error) {
     console.error("Error fetching palettes:", error);
@@ -131,25 +141,28 @@ export const getUserPalettes = async (req: Request, res: Response): Promise<void
 };
 
 export const getPalette = async (req: Request, res: Response): Promise<void> => {
-  const userId = (req as any).userId;
   const paletteId = parseInt(req.params.paletteId, 10);
-  if (!userId || isNaN(paletteId)) {
-    res.status(400).json({ error: "Invalid user ID or palette ID" });
+
+  if (isNaN(paletteId)) {
+    res.status(400).json({ error: "Invalid palette ID" });
     return;
   }
+
   try {
-    const palette = await prisma.palette.findFirst({
-      where: { id: paletteId, userId },
+    const palette = await prisma.palette.findUnique({
+      where: { id: paletteId },
       include: {
         photo: true,
         colors: true,
-        user: { select: { id: true, name: true, username: true } }
+        user: { select: { id: true, name: true, username: true, profilePhoto: true } },
       },
     });
+
     if (!palette) {
       res.status(404).json({ error: "Palette not found" });
       return;
     }
+
     res.status(200).json({ palette });
   } catch (error) {
     console.error("Error fetching palette:", error);
@@ -233,9 +246,10 @@ export const getPublicPalettes = async (req: Request, res: Response): Promise<vo
       include: {
         photo: true,
         colors: true,
-        user: { select: { id: true, name: true, username: true } },
+        user: { select: { id: true, name: true, username: true, profilePhoto: true } },
       },
     });
+
     res.status(200).json({ palettes });
   } catch (error) {
     console.error("Error fetching public palettes:", error);
@@ -245,6 +259,7 @@ export const getPublicPalettes = async (req: Request, res: Response): Promise<vo
 
 export const getUserPublicPalettes = async (req: Request, res: Response): Promise<void> => {
   const userId = parseInt(req.params.userId, 10);
+
   if (isNaN(userId)) {
     res.status(400).json({ error: "User ID is required and must be a number" });
     return;
@@ -281,10 +296,10 @@ export const getExplorePalettes = async (req: Request, res: Response): Promise<v
         colors: true,
         user: { select: { id: true, name: true, username: true, profilePhoto: true } },
       },
-      orderBy: { id: "desc" },
+      orderBy: { createdAt: "desc" },
       take: pageSize,
       skip: offset,
-    });    
+    });
 
     res.status(200).json({ palettes });
   } catch (error) {
