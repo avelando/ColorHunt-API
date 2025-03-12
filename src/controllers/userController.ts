@@ -273,7 +273,7 @@ export const searchUsersByUsername = async (req: Request, res: Response): Promis
 export const getUserProfile = async (req: Request, res: Response): Promise<void> => {
   const userId = parseInt(req.params.userId, 10);
   if (isNaN(userId)) {
-    res.status(400).json({ error: "User ID is required and must be a number" });
+    res.status(400).json({ error: "User ID é necessário e deve ser um número válido" });
     return;
   }
 
@@ -285,10 +285,6 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
         name: true, 
         username: true, 
         profilePhoto: true,
-        palettes: { 
-          where: { isPublic: true }, 
-          include: { photo: true, colors: true }
-        }
       },
     });
 
@@ -297,7 +293,46 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    res.status(200).json({ user });
+    const followersCount = await prisma.follower.count({
+      where: { followingId: userId },
+    });
+
+    const followingCount = await prisma.follower.count({
+      where: { followerId: userId },
+    });
+
+    const publicPalettes = await prisma.palette.findMany({
+      where: { userId, isPublic: true },
+      select: {
+        id: true,
+        title: true,
+        colors: true,
+        photo: {
+          select: {
+            imageUrl: true,
+          },
+        },
+      },
+    });
+
+    const formattedPalettes = publicPalettes.map(palette => ({
+      ...palette,
+      imageUrl: palette.photo?.imageUrl || null,
+    }));
+
+    const totalPalettesCount = await prisma.palette.count({
+      where: { userId },
+    });
+
+    res.status(200).json({
+      user: {
+        ...user,
+        followersCount,
+        followingCount,
+        totalPalettesCount,
+        palettes: formattedPalettes,
+      },
+    });
   } catch (error) {
     console.error("Erro ao buscar perfil do usuário:", error);
     res.status(500).json({ error: "Erro ao buscar perfil do usuário", details: error });
