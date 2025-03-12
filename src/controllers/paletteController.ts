@@ -43,8 +43,12 @@ export const uploadPhoto = async (req: Request, res: Response): Promise<void> =>
     await prisma.color.createMany({ data: colorData });
     const createdPalette = await prisma.palette.findUnique({
       where: { id: palette.id },
-      include: { photo: true, colors: true },
-    });
+      include: { 
+        photo: true, 
+        colors: true,
+        user: { select: { id: true, name: true, username: true, profilePhoto: true } }
+      },
+    });    
     res.status(201).json({
       message: "Photo uploaded and palette generated successfully",
       photo,
@@ -270,12 +274,17 @@ export const getExplorePalettes = async (req: Request, res: Response): Promise<v
     const pageSize = limit ? parseInt(limit as string, 10) : 10;
     const offset = (pageNumber - 1) * pageSize;
 
-    const palettes = await prisma.$queryRaw`
-      SELECT * FROM "Palette"
-      WHERE "isPublic" = true
-      ORDER BY RANDOM()
-      LIMIT ${pageSize} OFFSET ${offset}
-    `;
+    const palettes = await prisma.palette.findMany({
+      where: { isPublic: true },
+      include: {
+        photo: true,
+        colors: true,
+        user: { select: { id: true, name: true, username: true, profilePhoto: true } },
+      },
+      orderBy: { id: "desc" },
+      take: pageSize,
+      skip: offset,
+    });    
 
     res.status(200).json({ palettes });
   } catch (error) {
