@@ -1,0 +1,99 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  username     String     @unique
+  email        String     @unique
+  password     String
+  profilePhoto String?
+  createdAt    DateTime   @default(now())
+  photos       Photo[]
+  palettes     Palette[]
+  followers    Follower[] @relation("UserFollowers")
+  following    Follower[] @relation("UserFollowing")
+  likes        Like[]
+  comments     Comment[]
+}
+
+model Photo {
+  id        String   @id @default(uuid())
+  userId    String
+  imageUrl  String
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  palette Palette?
+
+  colors  Color[]
+}
+
+model Palette {
+  id           String    @id @default(uuid())
+  photoId      String    @unique
+  userId       String
+  title        String
+  isPublic     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  originalId   String?
+
+  photo        Photo     @relation(fields: [photoId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+  colors       Color[]
+
+  original     Palette?  @relation("PaletteDuplication", fields: [originalId], references: [id])
+  duplicates   Palette[] @relation("PaletteDuplication")
+
+  likes        Like[]
+  comments     Comment[]
+}
+
+model Color {
+  id        String  @id @default(uuid())
+  hex       String
+  paletteId String
+  photoId   String
+
+  palette Palette @relation(fields: [paletteId], references: [id])
+  photo   Photo   @relation(fields: [photoId], references: [id])
+}
+
+model Follower {
+  id          String  @id @default(uuid())
+  followerId  String
+  followingId String
+  follower    User    @relation("UserFollowers", fields: [followerId], references: [id])
+  following   User    @relation("UserFollowing", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
+
+model Like {
+  id         String   @id @default(uuid())
+  paletteId  String
+  userId     String
+  createdAt  DateTime @default(now())
+
+  palette Palette @relation(fields: [paletteId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([paletteId, userId])
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  paletteId  String
+  userId     String
+  content    String
+  createdAt  DateTime @default(now())
+
+  palette Palette @relation(fields: [paletteId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+}
