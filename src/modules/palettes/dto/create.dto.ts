@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UploadPhotoDto {
-  @ApiProperty({ description: 'URL da imagem enviada (upload no Cloudinary)' })
-  imageUrl: string;
+export class CreatePaletteDto {
+  @ApiProperty({ description: 'ID da foto utilizada para criar a paleta' })
+  photoId: string;
 
   @ApiProperty({ description: 'Título da paleta', required: false, default: 'Minha Paleta' })
   title?: string;

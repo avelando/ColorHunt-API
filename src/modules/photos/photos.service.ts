@@ -1,15 +1,13 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
-import { extractPaletteFromImage } from '../../utils/image.utils';
-import { UploadPhotoDto } from '../palettes/dto/upload.dto';
+import { UploadPhotoDto } from './dto/upload.dto';
 
 @Injectable()
 export class PhotosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async uploadPhoto(userId: string, uploadPhotoDto: UploadPhotoDto) {
-    const { imageUrl, title, isPublic } = uploadPhotoDto;
-
+    const { imageUrl } = uploadPhotoDto;
     if (!userId) {
       throw new HttpException('User ID is missing or invalid', HttpStatus.BAD_REQUEST);
     }
@@ -18,51 +16,13 @@ export class PhotosService {
     }
     try {
       const photo = await this.prisma.photo.create({
-        data: {
-          userId,
-          imageUrl,
-        },
+        data: { userId, imageUrl },
       });
       console.log("📷 Foto salva no banco com ID:", photo.id);
-
-      const extractedColors = await extractPaletteFromImage(imageUrl);
-      if (!extractedColors || extractedColors.length !== 5) {
-        throw new HttpException(
-          'Failed to extract a valid 5-color palette',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-      console.log("🎨 Paleta extraída:", extractedColors);
-
-      const palette = await this.prisma.palette.create({
-        data: {
-          userId,
-          photoId: photo.id,
-          title: title || "Minha Paleta",
-          isPublic: typeof isPublic === 'string' ? isPublic === 'true' : !!isPublic,
-        },
-      });
-
-      const colorData = extractedColors.map((hex: string) => ({
-        hex,
-        paletteId: palette.id,
-        photoId: photo.id,
-      }));
-      await this.prisma.color.createMany({ data: colorData });
-
-      const createdPalette = await this.prisma.palette.findUnique({
-        where: { id: palette.id },
-        include: { photo: true, colors: true },
-      });
-
-      return {
-        message: "Photo uploaded and palette generated successfully",
-        photo,
-        palette: createdPalette,
-      };
+      return { photo };
     } catch (error) {
-      console.error("❌ Erro ao processar upload:", error);
-      throw new HttpException({ error: "Error processing upload", details: error.message }, HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error("❌ Erro ao processar upload de foto:", error);
+      throw new HttpException({ error: "Error processing photo upload", details: error.message }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

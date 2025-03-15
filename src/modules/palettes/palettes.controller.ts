@@ -11,14 +11,14 @@ import {
 } from '@nestjs/common';
 import { PalettesService } from './palettes.service';
 import { Request } from 'express';
-import { UploadPhotoDto } from './dto/upload.dto';
+import { UploadPhotoDto } from './dto/create.dto';
 import { UpdatePaletteDto } from './dto/update.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Paletas')
 @Controller('palettes')
 export class PalettesController {
-  constructor(private readonly palettesService: PalettesService) {}
+  constructor(private readonly palettesService: PalettesService) { }
 
   @Post('upload')
   @ApiOperation({ summary: 'Enviar foto e gerar paleta' })

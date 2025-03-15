@@ -1,12 +1,12 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
-import { UploadPhotoDto } from './dto/upload.dto';
+import { CreatePaletteDto } from './dto/create.dto';
 import { UpdatePaletteDto } from './dto/update.dto';
 import { extractPaletteFromImage } from '../../utils/image.utils';
 
 @Injectable()
 export class PalettesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private parseIsPublic(isPublic: boolean | string | undefined): boolean {
     if (typeof isPublic === 'string') {
@@ -15,21 +15,21 @@ export class PalettesService {
     return !!isPublic;
   }
 
-  async uploadPhoto(userId: string, uploadDto: UploadPhotoDto) {
-    const { imageUrl, title, isPublic } = uploadDto;
+  async createPalette(userId: string, createDto: CreatePaletteDto) {
+    const { photoId, title, isPublic } = createDto;
     if (!userId) {
-      throw new HttpException('User ID is missing or invalid', HttpStatus.BAD_REQUEST);
+      throw new HttpException('User ID missing', HttpStatus.BAD_REQUEST);
     }
-    if (!imageUrl) {
-      throw new HttpException('No image URL provided', HttpStatus.BAD_REQUEST);
+    if (!photoId) {
+      throw new HttpException('Photo ID is required', HttpStatus.BAD_REQUEST);
     }
-
     try {
-      const photo = await this.prisma.photo.create({
-        data: { userId, imageUrl },
-      });
+      const photo = await this.prisma.photo.findUnique({ where: { id: photoId } });
+      if (!photo) {
+        throw new HttpException('Photo not found', HttpStatus.NOT_FOUND);
+      }
 
-      const extractedColors = await extractPaletteFromImage(imageUrl);
+      const extractedColors = await extractPaletteFromImage(photo.imageUrl);
       if (!extractedColors || extractedColors.length !== 5) {
         throw new HttpException(
           'Failed to extract a valid 5-color palette',
@@ -60,63 +60,6 @@ export class PalettesService {
           colors: true,
           user: { select: { id: true, name: true, username: true, profilePhoto: true } },
         },
-      });
-
-      return {
-        message: 'Photo uploaded and palette generated successfully',
-        photo,
-        palette: createdPalette,
-      };
-    } catch (error) {
-      console.error('❌ Erro ao processar upload:', error);
-      throw new HttpException(
-        { error: 'Error processing upload', details: error.message },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  async createPalette(userId: string, uploadDto: UploadPhotoDto) {
-    const { imageUrl, title, isPublic } = uploadDto;
-    if (!userId) {
-      throw new HttpException('User ID missing', HttpStatus.BAD_REQUEST);
-    }
-    if (!imageUrl) {
-      throw new HttpException('No image URL provided', HttpStatus.BAD_REQUEST);
-    }
-
-    try {
-      const photo = await this.prisma.photo.create({
-        data: { userId, imageUrl },
-      });
-
-      const extractedColors = await extractPaletteFromImage(imageUrl);
-      if (!extractedColors || extractedColors.length !== 5) {
-        throw new HttpException(
-          'Failed to extract a valid 5-color palette',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-
-      const palette = await this.prisma.palette.create({
-        data: {
-          userId,
-          photoId: photo.id,
-          title: title || 'Minha Paleta',
-          isPublic: this.parseIsPublic(isPublic),
-        },
-      });
-
-      const colorData = extractedColors.map((hex: string) => ({
-        hex,
-        paletteId: palette.id,
-        photoId: photo.id,
-      }));
-      await this.prisma.color.createMany({ data: colorData });
-
-      const createdPalette = await this.prisma.palette.findUnique({
-        where: { id: palette.id },
-        include: { photo: true, colors: true },
       });
 
       return {

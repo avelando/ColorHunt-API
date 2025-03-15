@@ -1,13 +1,13 @@
 import { Controller, Post, Get, Delete, Body, Param, Req } from '@nestjs/common';
 import { PhotosService } from './photos.service';
 import { Request } from 'express';
-import { UploadPhotoDto } from '../palettes/dto/upload.dto';
+import { UploadPhotoDto } from '../palettes/dto/create.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Fotos')
 @Controller('photos')
 export class PhotosController {
-  constructor(private readonly photosService: PhotosService) {}
+  constructor(private readonly photosService: PhotosService) { }
 
   @Post('upload')
   @ApiOperation({ summary: 'Enviar foto' })
