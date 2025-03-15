@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Delete, Body, Param, Req } from '@nestjs/common';
 import { PhotosService } from './photos.service';
 import { Request } from 'express';
-import { UploadPhotoDto } from '../palettes/dto/create.dto';
+import { UploadPhotoDto } from './dto/upload.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Fotos')

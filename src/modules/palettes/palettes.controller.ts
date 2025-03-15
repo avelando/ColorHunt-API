@@ -11,8 +11,8 @@ import {
 } from '@nestjs/common';
 import { PalettesService } from './palettes.service';
 import { Request } from 'express';
-import { UploadPhotoDto } from './dto/create.dto';
 import { UpdatePaletteDto } from './dto/update.dto';
+import { CreatePaletteDto } from './dto/create.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Paletas')
@@ -20,17 +20,9 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class PalettesController {
   constructor(private readonly palettesService: PalettesService) { }
 
-  @Post('upload')
-  @ApiOperation({ summary: 'Enviar foto e gerar paleta' })
-  @ApiResponse({ status: 201, description: 'Foto enviada e paleta gerada com sucesso' })
-  async uploadPhoto(@Req() req: Request, @Body() dto: UploadPhotoDto) {
-    const userId = (req as any).userId as string;
-    return this.palettesService.uploadPhoto(userId, dto);
-  }
-
   @Post()
   @ApiOperation({ summary: 'Criar paleta' })
-  async createPalette(@Req() req: Request, @Body() dto: UploadPhotoDto) {
+  async createPalette(@Req() req: Request, @Body() dto: CreatePaletteDto) {
     const userId = (req as any).userId as string;
     return this.palettesService.createPalette(userId, dto);
   }
