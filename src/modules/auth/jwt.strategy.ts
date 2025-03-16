@@ -18,9 +18,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id: payload.id },
       select: { id: true, name: true, username: true, email: true, profilePhoto: true },
     });
+
     if (!user) {
       throw new UnauthorizedException();
     }
-    return user;
+
+    return { ...user, userId: user.id };
   }
 }

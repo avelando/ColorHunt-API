@@ -37,7 +37,9 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
+    
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: '2h' });
+  
     return { message: 'Login successful', token, userId: user.id };
-  }
+  }  
 }
