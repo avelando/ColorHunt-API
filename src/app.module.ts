@@ -10,6 +10,7 @@ import { ColorsModule } from './modules/colors/colors.module';
 import { PhotosModule } from './modules/photos/photos.module';
 import { LikesModule } from './modules/likes/likes.module';
 import { CommentsModule } from './modules/comments/comments.module';
+import { CloudinaryProvider } from './services/cloudinary.provider';
 
 @Module({
   imports: [
@@ -26,6 +27,6 @@ import { CommentsModule } from './modules/comments/comments.module';
     CommentsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, CloudinaryProvider],
 })
 export class AppModule {}

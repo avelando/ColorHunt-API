@@ -1,23 +1,34 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
-import { UploadPhotoDto } from './dto/upload.dto';
+import { v2 as cloudinary } from 'cloudinary';
+import { UploadApiResponse } from 'cloudinary';
 
 @Injectable()
 export class PhotosService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('CLOUDINARY') private readonly cloudinary
+  ) {}
 
-  async uploadPhoto(userId: string, uploadPhotoDto: UploadPhotoDto) {
-    const { imageUrl } = uploadPhotoDto;
+  async uploadPhoto(userId: string, file: Express.Multer.File) {
     if (!userId) {
       throw new HttpException('User ID is missing or invalid', HttpStatus.BAD_REQUEST);
     }
-    if (!imageUrl) {
-      throw new HttpException('No image URL provided', HttpStatus.BAD_REQUEST);
+    if (!file) {
+      throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
     }
+
     try {
-      const photo = await this.prisma.photo.create({
-        data: { userId, imageUrl },
+      const uploadResult: UploadApiResponse = await this.cloudinary.uploader.upload(file.path, {
+        folder: 'photos',
+        use_filename: true,
+        unique_filename: false,
       });
+
+      const photo = await this.prisma.photo.create({
+        data: { userId, imageUrl: uploadResult.secure_url },
+      });
+
       console.log("📷 Foto salva no banco com ID:", photo.id);
       return { photo };
     } catch (error) {
@@ -33,7 +44,6 @@ export class PhotosService {
     try {
       const photos = await this.prisma.photo.findMany({
         where: { userId },
-        include: { palette: { include: { colors: true } } },
       });
       return { photos };
     } catch (error) {
