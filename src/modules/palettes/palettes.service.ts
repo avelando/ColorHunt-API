@@ -88,7 +88,8 @@ export class PalettesService {
           user: { select: { id: true, name: true, username: true, profilePhoto: true } },
         },
       });
-      return { palettes };
+  
+      return palettes.length > 0 ? { palettes } : { palettes: [] };
     } catch (error) {
       console.error('Error fetching palettes:', error);
       throw new HttpException(
@@ -97,7 +98,7 @@ export class PalettesService {
       );
     }
   }
-
+  
   async getPalette(paletteId: string) {
     try {
       const palette = await this.prisma.palette.findUnique({

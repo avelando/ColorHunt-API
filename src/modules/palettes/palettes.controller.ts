@@ -8,12 +8,14 @@ import {
   Param,
   Query,
   Req,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PalettesService } from './palettes.service';
 import { Request } from 'express';
 import { UpdatePaletteDto } from './dto/update.dto';
 import { CreatePaletteDto } from './dto/create.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('Paletas')
 @Controller('palettes')
@@ -30,9 +32,12 @@ export class PalettesController {
   @Get('user')
   @ApiOperation({ summary: 'Obter paletas do usuário logado' })
   async getUserPalettes(@Req() req: Request) {
-    const userId = (req as any).userId as string;
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      throw new HttpException('User ID missing', HttpStatus.BAD_REQUEST);
+    }
     return this.palettesService.getUserPalettes(userId);
-  }
+  }  
 
   @Get(':paletteId')
   @ApiOperation({ summary: 'Obter paleta pelo ID' })
