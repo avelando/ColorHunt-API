@@ -9,13 +9,19 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
-  @Post('upload')
   @ApiOperation({ summary: 'Enviar foto' })
   @ApiResponse({ status: 201, description: 'Foto enviada com sucesso' })
+  @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadPhoto(@Req() req: Request, @UploadedFile() file: Express.Multer.File) {
+    console.log("📥 Arquivo recebido:", file);
+
+    if (!file) {
+      throw new HttpException('Arquivo não foi enviado corretamente.', HttpStatus.BAD_REQUEST);
+    }
+
     const userId = req.headers['x-user-id'] as string;
-    
+
     if (!userId) {
       throw new HttpException('User ID missing in headers', HttpStatus.BAD_REQUEST);
     }

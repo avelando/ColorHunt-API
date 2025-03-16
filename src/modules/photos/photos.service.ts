@@ -1,13 +1,12 @@
 import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
-import { v2 as cloudinary } from 'cloudinary';
 import { UploadApiResponse } from 'cloudinary';
 
 @Injectable()
 export class PhotosService {
   constructor(
     private readonly prisma: PrismaService,
-    @Inject('CLOUDINARY') private readonly cloudinary
+    @Inject('CLOUDINARY') private readonly cloudinaryInstance
   ) {}
 
   async uploadPhoto(userId: string, file: Express.Multer.File) {
@@ -19,11 +18,21 @@ export class PhotosService {
     }
 
     try {
-      const uploadResult: UploadApiResponse = await this.cloudinary.uploader.upload(file.path, {
-        folder: 'photos',
+      console.log("📤 Iniciando upload para Cloudinary...");
+      console.log("📁 Caminho do arquivo recebido:", file.path);
+
+      if (!this.cloudinaryInstance || !this.cloudinaryInstance.uploader) {
+        throw new HttpException('Cloudinary instance is not defined', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
+      const uploadResult: UploadApiResponse = await this.cloudinaryInstance.uploader.upload(file.path, {
+        folder: 'colorhunt',
         use_filename: true,
         unique_filename: false,
-      });
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+      });      
+
+      console.log("✅ Upload concluído:", uploadResult.secure_url);
 
       const photo = await this.prisma.photo.create({
         data: { userId, imageUrl: uploadResult.secure_url },
@@ -33,7 +42,10 @@ export class PhotosService {
       return { photo };
     } catch (error) {
       console.error("❌ Erro ao processar upload de foto:", error);
-      throw new HttpException({ error: "Error processing photo upload", details: error.message }, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        { error: "Error processing photo upload", details: error.message },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
