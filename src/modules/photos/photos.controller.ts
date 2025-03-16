@@ -1,20 +1,21 @@
-import { Controller, Post, Get, Delete, Body, Param, Req } from '@nestjs/common';
+import { Controller, Post, Get, Delete, UploadedFile, UseInterceptors, Req, Param } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PhotosService } from './photos.service';
-import { Request } from 'express';
-import { UploadPhotoDto } from './dto/upload.dto';
+import { Request, Express } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Fotos')
 @Controller('photos')
 export class PhotosController {
-  constructor(private readonly photosService: PhotosService) { }
+  constructor(private readonly photosService: PhotosService) {}
 
   @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Enviar foto' })
   @ApiResponse({ status: 201, description: 'Foto enviada com sucesso' })
-  async uploadPhoto(@Req() req: Request, @Body() uploadPhotoDto: UploadPhotoDto) {
+  async uploadPhoto(@Req() req: Request, @UploadedFile() file: Express.Multer.File) {
     const userId = (req as any).userId as string;
-    return await this.photosService.uploadPhoto(userId, uploadPhotoDto);
+    return await this.photosService.uploadPhoto(userId, file);
   }
 
   @Get()
