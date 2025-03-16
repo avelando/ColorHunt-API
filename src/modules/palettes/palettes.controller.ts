@@ -25,7 +25,12 @@ export class PalettesController {
   @Post()
   @ApiOperation({ summary: 'Criar paleta' })
   async createPalette(@Req() req: Request, @Body() dto: CreatePaletteDto) {
-    const userId = (req as any).userId as string;
+    const userId = req.headers['x-user-id'] as string;
+
+    if (!userId) {
+      throw new HttpException('User ID missing in headers', HttpStatus.BAD_REQUEST);
+    }
+
     return this.palettesService.createPalette(userId, dto);
   }
 
