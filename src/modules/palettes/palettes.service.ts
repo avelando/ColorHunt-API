@@ -97,7 +97,7 @@ export class PalettesService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
+  }  
   
   async getPalette(paletteId: string) {
     try {

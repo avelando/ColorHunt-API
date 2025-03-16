@@ -32,12 +32,12 @@ export class PalettesController {
   @Get('user')
   @ApiOperation({ summary: 'Obter paletas do usuário logado' })
   async getUserPalettes(@Req() req: Request) {
-    const userId = (req as any).user?.id;
+    const userId = (req.user as any)?.id || req.headers['x-user-id'];
     if (!userId) {
       throw new HttpException('User ID missing', HttpStatus.BAD_REQUEST);
     }
     return this.palettesService.getUserPalettes(userId);
-  }  
+  }
 
   @Get(':paletteId')
   @ApiOperation({ summary: 'Obter paleta pelo ID' })
