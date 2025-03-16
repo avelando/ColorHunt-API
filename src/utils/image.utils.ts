@@ -1,11 +1,27 @@
+import axios from 'axios';
 import getColors from 'get-image-colors';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export const extractPaletteFromImage = async (imageUrl: string): Promise<string[]> => {
-  try {
-    const resizedImageUrl = imageUrl.replace('/upload/', '/upload/w_500,h_500,c_scale/');
-    console.log("🔍 Usando imagem reduzida para extração:", resizedImageUrl);
+  const tempFilePath = path.join(__dirname, 'temp_image.jpg');
 
-    const colors = await getColors(resizedImageUrl);
+  try {
+    console.log("📥 Baixando imagem para extração de cores:", imageUrl);
+
+    const response = await axios({
+      url: imageUrl,
+      responseType: 'arraybuffer',
+      validateStatus: (status) => status >= 200 && status < 300,
+    });    
+
+    await fs.promises.writeFile(tempFilePath, Buffer.from(response.data));
+
+    console.log("📂 Imagem salva temporariamente em:", tempFilePath);
+
+    const colors = await getColors(tempFilePath);
+
+    await fs.promises.unlink(tempFilePath);
 
     if (!colors || colors.length === 0) {
       console.log("⚠️ Nenhuma cor extraída!");
@@ -26,6 +42,15 @@ export const extractPaletteFromImage = async (imageUrl: string): Promise<string[
     return hexColors;
   } catch (error) {
     console.error("❌ Erro ao extrair cores:", error);
-    return [];
+
+    try {
+      if (fs.existsSync(tempFilePath)) {
+        await fs.promises.unlink(tempFilePath);
+      }
+    } catch (unlinkError) {
+      console.error("⚠️ Falha ao excluir arquivo temporário:", unlinkError);
+    }
+
+    throw error;
   }
 };

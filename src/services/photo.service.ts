@@ -1,4 +1,3 @@
-// src/services/photo.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma/prisma.service';
 
