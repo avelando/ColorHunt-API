@@ -1,6 +1,7 @@
 import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { UploadApiResponse } from 'cloudinary';
+import { Readable } from 'stream';
 
 @Injectable()
 export class PhotosService {
@@ -19,27 +20,39 @@ export class PhotosService {
 
     try {
       console.log("📤 Iniciando upload para Cloudinary...");
-      console.log("📁 Caminho do arquivo recebido:", file.path);
+      console.log("📁 Arquivo recebido:", file);
 
-      if (!this.cloudinaryInstance || !this.cloudinaryInstance.uploader) {
-        throw new HttpException('Cloudinary instance is not defined', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+      return new Promise((resolve, reject) => {
+        const stream = this.cloudinaryInstance.uploader.upload_stream(
+          {
+            folder: 'colorhunt',
+            use_filename: true,
+            unique_filename: false,
+            upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+          },
+          async (error: any, uploadResult: UploadApiResponse) => {
+            if (error) {
+              console.error("❌ Erro no upload para Cloudinary:", error);
+              reject(new HttpException("Erro ao fazer upload da imagem", HttpStatus.INTERNAL_SERVER_ERROR));
+            }
 
-      const uploadResult: UploadApiResponse = await this.cloudinaryInstance.uploader.upload(file.path, {
-        folder: 'colorhunt',
-        use_filename: true,
-        unique_filename: false,
-        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
-      });      
+            console.log("✅ Upload concluído:", uploadResult.secure_url);
 
-      console.log("✅ Upload concluído:", uploadResult.secure_url);
+            const photo = await this.prisma.photo.create({
+              data: { userId, imageUrl: uploadResult.secure_url },
+            });
 
-      const photo = await this.prisma.photo.create({
-        data: { userId, imageUrl: uploadResult.secure_url },
+            console.log("📷 Foto salva no banco com ID:", photo.id);
+            resolve({ photo });
+          }
+        );
+
+        const bufferStream = new Readable();
+        bufferStream.push(file.buffer);
+        bufferStream.push(null);
+
+        bufferStream.pipe(stream);
       });
-
-      console.log("📷 Foto salva no banco com ID:", photo.id);
-      return { photo };
     } catch (error) {
       console.error("❌ Erro ao processar upload de foto:", error);
       throw new HttpException(
