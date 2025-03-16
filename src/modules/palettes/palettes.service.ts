@@ -34,7 +34,7 @@ export class PalettesService {
       console.log("🔎 URL da imagem para extração:", photo.imageUrl);
       console.log("🎨 Cores extraídas:", extractedColors);
 
-      if (!extractedColors || extractedColors.length !== 0) {
+      if (!extractedColors || extractedColors.length !== 5) {
         console.error("❌ Falha ao extrair a paleta. Retorno:", extractedColors);
         throw new HttpException(
           'Failed to extract a valid 5-color palette',
