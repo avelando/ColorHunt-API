@@ -10,7 +10,7 @@ import { ColorsModule } from './modules/colors/colors.module';
 import { PhotosModule } from './modules/photos/photos.module';
 import { LikesModule } from './modules/likes/likes.module';
 import { CommentsModule } from './modules/comments/comments.module';
-import { CloudinaryProvider } from './services/cloudinary.provider';
+import { CloudinaryProvider } from './config/cloudinary.provider';
 
 @Module({
   imports: [
