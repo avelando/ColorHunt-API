@@ -15,14 +15,16 @@ export class PhotosController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadPhoto(@Req() req: Request, @UploadedFile() file: Express.Multer.File) {
     console.log("📥 Arquivo recebido:", file);
-
+    
     if (!file) {
+      console.error("❌ Nenhum arquivo foi enviado!");
       throw new HttpException('Arquivo não foi enviado corretamente.', HttpStatus.BAD_REQUEST);
     }
 
     const userId = req.headers['x-user-id'] as string;
 
     if (!userId) {
+      console.error("❌ User ID ausente nos headers!");
       throw new HttpException('User ID missing in headers', HttpStatus.BAD_REQUEST);
     }
 
