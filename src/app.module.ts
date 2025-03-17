@@ -11,9 +11,11 @@ import { PhotosModule } from './modules/photos/photos.module';
 import { LikesModule } from './modules/likes/likes.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { CloudinaryProvider } from './config/cloudinary.provider';
+import { CloudinaryModule } from './config/cloudinary.module';
 
 @Module({
   imports: [
+    CloudinaryModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
