@@ -1,10 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsBooleanString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBooleanString,
+} from 'class-validator';
 
 export class CreatePaletteDto {
-  @ApiProperty({ description: 'ID da foto utilizada para criar a paleta' })
+  @ApiProperty({ description: 'ID da foto (se já existir)', required: false })
   @IsString()
-  photoId: string;
+  @IsOptional()
+  photoId?: string;
 
   @ApiProperty({ description: 'Título da paleta', required: false, default: 'Minha Paleta' })
   @IsString()
@@ -12,11 +17,11 @@ export class CreatePaletteDto {
   title?: string;
 
   @ApiProperty({
-    description: 'Define se a paleta é pública. Pode ser boolean ou string "true"/"false".',
+    description: 'Define se a paleta é pública. Pode ser "true"/"false".',
     required: false,
     default: false,
   })
-  @IsBoolean()
+  @IsBooleanString()
   @IsOptional()
-  isPublic?: boolean;
+  isPublic?: boolean | string;
 }
