@@ -32,53 +32,61 @@ export class PalettesService {
       throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
     }
 
-    return await this.prisma.$transaction(async (prisma) => {
-      const uploadResult: UploadApiResponse = await new Promise((resolve, reject) => {
-        const stream = this.cloudinaryInstance.uploader.upload_stream(
-          {
-            folder: 'colorhunt',
-            use_filename: true,
-            unique_filename: false,
-            upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
-          },
-          (error: any, result: UploadApiResponse) => {
-            if (error) {
-              console.error("❌ Erro no upload para Cloudinary:", error);
-              return reject(new HttpException("Erro ao fazer upload da imagem", HttpStatus.INTERNAL_SERVER_ERROR));
-            }
-            console.log("✅ Upload concluído:", result.secure_url);
-            resolve(result);
-          }
-        );
-
-        const bufferStream = new Readable();
-        bufferStream.push(file.buffer);
-        bufferStream.push(null);
-        bufferStream.pipe(stream);
-      });
-
-      if (!uploadResult || !uploadResult.secure_url) {
-        throw new HttpException('Image upload failed', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-
-      const photo = await prisma.photo.create({
-        data: {
-          userId,
-          imageUrl: uploadResult.secure_url,
+    const uploadResult: UploadApiResponse = await new Promise((resolve, reject) => {
+      const stream = this.cloudinaryInstance.uploader.upload_stream(
+        {
+          folder: 'colorhunt',
+          use_filename: true,
+          unique_filename: false,
+          upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
         },
-      });
-      console.log("📷 Foto salva no banco com ID:", photo.id);
+        (error: any, result: UploadApiResponse) => {
+          if (error) {
+            console.error('❌ Erro no upload para Cloudinary:', error);
+            return reject(
+              new HttpException('Erro ao fazer upload da imagem', HttpStatus.INTERNAL_SERVER_ERROR),
+            );
+          }
+          console.log('✅ Upload concluído:', result.secure_url);
+          resolve(result);
+        },
+      );
 
-      const extractedColors = await extractPaletteFromImage(photo.imageUrl);
-      console.log("🔎 URL da imagem para extração:", photo.imageUrl);
-      console.log("🎨 Cores extraídas:", extractedColors);
+      const bufferStream = new Readable();
+      bufferStream.push(file.buffer);
+      bufferStream.push(null);
+      bufferStream.pipe(stream);
+    });
 
-      if (!extractedColors || extractedColors.length !== 5) {
-        await prisma.photo.delete({ where: { id: photo.id } });
-        throw new HttpException('Failed to extract a valid 5-color palette', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+    if (!uploadResult || !uploadResult.secure_url) {
+      throw new HttpException('Image upload failed', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
-      const palette = await prisma.palette.create({
+    const photo = await this.prisma.photo.create({
+      data: {
+        userId,
+        imageUrl: uploadResult.secure_url,
+      },
+    });
+    console.log('📷 Foto salva no banco com ID:', photo.id);
+
+    let extractedColors: string[];
+    try {
+      extractedColors = await extractPaletteFromImage(photo.imageUrl);
+      console.log('🔎 URL da imagem para extração:', photo.imageUrl);
+      console.log('🎨 Cores extraídas:', extractedColors);
+    } catch (error) {
+      await this.prisma.photo.delete({ where: { id: photo.id } });
+      throw new HttpException('Failed to extract a valid 5-color palette', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (!extractedColors || extractedColors.length !== 5) {
+      await this.prisma.photo.delete({ where: { id: photo.id } });
+      throw new HttpException('Failed to extract a valid 5-color palette', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    const createdPalette = await this.prisma.$transaction(async (tx) => {
+      const palette = await tx.palette.create({
         data: {
           userId,
           photoId: photo.id,
@@ -92,9 +100,9 @@ export class PalettesService {
         paletteId: palette.id,
         photoId: photo.id,
       }));
-      await prisma.color.createMany({ data: colorData });
+      await tx.color.createMany({ data: colorData });
 
-      const createdPalette = await prisma.palette.findUnique({
+      const finalPalette = await tx.palette.findUnique({
         where: { id: palette.id },
         include: {
           photo: true,
@@ -102,12 +110,13 @@ export class PalettesService {
           user: { select: { id: true, name: true, username: true, profilePhoto: true } },
         },
       });
+      return finalPalette;
+    }, { timeout: 30000 });
 
-      return {
-        message: 'Palette created successfully',
-        palette: createdPalette,
-      };
-    });
+    return {
+      message: 'Palette created successfully',
+      palette: createdPalette,
+    };
   }
 
   async createPalette(userId: string, createDto: CreatePaletteDto) {
