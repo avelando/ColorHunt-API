@@ -16,6 +16,7 @@ export class CreatePaletteDto {
     required: false,
     default: false,
   })
+  @IsBoolean()
   @IsOptional()
-  isPublic?: boolean | string;
+  isPublic?: boolean;
 }

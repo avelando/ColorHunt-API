@@ -12,6 +12,6 @@ export class UpdatePaletteDto {
     required: false,
   })
   @IsOptional()
-  @IsBooleanString() // ou @IsBoolean()
+  @IsBooleanString()
   isPublic?: boolean | string;
 }
