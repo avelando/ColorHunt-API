@@ -10,17 +10,36 @@ import {
   Req,
   HttpException,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { PalettesService } from './palettes.service';
 import { Request } from 'express';
 import { UpdatePaletteDto } from './dto/update.dto';
 import { CreatePaletteDto } from './dto/create.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Paletas')
 @Controller('palettes')
 export class PalettesController {
   constructor(private readonly palettesService: PalettesService) { }
+
+  @Post('create-with-image')
+  @ApiOperation({ summary: 'Criar paleta + Upload de Imagem' })
+  @UseInterceptors(FileInterceptor('file'))
+  async createPaletteWithImage(
+    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: CreatePaletteDto,
+  ) {
+    const userId = req.headers['x-user-id'] as string;
+    if (!userId) {
+      throw new HttpException('User ID missing in headers', HttpStatus.BAD_REQUEST);
+    }
+
+    return this.palettesService.createPaletteWithImage(userId, file, dto);
+  }
 
   @Post()
   async createPalette(@Req() req: Request, @Body() dto: CreatePaletteDto) {

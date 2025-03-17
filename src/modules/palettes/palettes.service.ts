@@ -1,18 +1,113 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { CreatePaletteDto } from './dto/create.dto';
 import { UpdatePaletteDto } from './dto/update.dto';
 import { extractPaletteFromImage } from '../../utils/image.utils';
+import { UploadApiResponse } from 'cloudinary';
+import { Readable } from 'stream';
 
 @Injectable()
 export class PalettesService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('CLOUDINARY') private readonly cloudinaryInstance: any,
+  ) { }
 
   private parseIsPublic(isPublic: boolean | string | undefined): boolean {
     if (typeof isPublic === 'string') {
       return isPublic.toLowerCase() === 'true';
     }
     return !!isPublic;
+  }
+
+  async createPaletteWithImage(
+    userId: string,
+    file: Express.Multer.File,
+    createDto: CreatePaletteDto,
+  ) {
+    if (!userId) {
+      throw new HttpException('User ID missing', HttpStatus.BAD_REQUEST);
+    }
+    if (!file) {
+      throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.prisma.$transaction(async (prisma) => {
+      const uploadResult: UploadApiResponse = await new Promise((resolve, reject) => {
+        const stream = this.cloudinaryInstance.uploader.upload_stream(
+          {
+            folder: 'colorhunt',
+            use_filename: true,
+            unique_filename: false,
+            upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+          },
+          (error: any, result: UploadApiResponse) => {
+            if (error) {
+              console.error("❌ Erro no upload para Cloudinary:", error);
+              return reject(new HttpException("Erro ao fazer upload da imagem", HttpStatus.INTERNAL_SERVER_ERROR));
+            }
+            console.log("✅ Upload concluído:", result.secure_url);
+            resolve(result);
+          }
+        );
+
+        const bufferStream = new Readable();
+        bufferStream.push(file.buffer);
+        bufferStream.push(null);
+        bufferStream.pipe(stream);
+      });
+
+      if (!uploadResult || !uploadResult.secure_url) {
+        throw new HttpException('Image upload failed', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
+      const photo = await prisma.photo.create({
+        data: {
+          userId,
+          imageUrl: uploadResult.secure_url,
+        },
+      });
+      console.log("📷 Foto salva no banco com ID:", photo.id);
+
+      const extractedColors = await extractPaletteFromImage(photo.imageUrl);
+      console.log("🔎 URL da imagem para extração:", photo.imageUrl);
+      console.log("🎨 Cores extraídas:", extractedColors);
+
+      if (!extractedColors || extractedColors.length !== 5) {
+        await prisma.photo.delete({ where: { id: photo.id } });
+        throw new HttpException('Failed to extract a valid 5-color palette', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
+      const palette = await prisma.palette.create({
+        data: {
+          userId,
+          photoId: photo.id,
+          title: createDto.title || 'Minha Paleta',
+          isPublic: this.parseIsPublic(createDto.isPublic),
+        },
+      });
+
+      const colorData = extractedColors.map((hex: string) => ({
+        hex,
+        paletteId: palette.id,
+        photoId: photo.id,
+      }));
+      await prisma.color.createMany({ data: colorData });
+
+      const createdPalette = await prisma.palette.findUnique({
+        where: { id: palette.id },
+        include: {
+          photo: true,
+          colors: true,
+          user: { select: { id: true, name: true, username: true, profilePhoto: true } },
+        },
+      });
+
+      return {
+        message: 'Palette created successfully',
+        palette: createdPalette,
+      };
+    });
   }
 
   async createPalette(userId: string, createDto: CreatePaletteDto) {
