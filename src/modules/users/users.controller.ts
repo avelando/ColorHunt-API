@@ -9,6 +9,10 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,8 +26,8 @@ import { UsersService } from './users.service';
 import { Request } from 'express';
 import { UpdateUserDto } from './dto/update.dto';
 import { FollowUserDto } from './dto/follow.dto';
-import { UpdateProfilePhotoDto } from './dto/update-photo.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Users')
 @Controller('users')
@@ -134,21 +138,13 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('me/profile-photo')
-  @ApiOperation({ summary: 'Atualiza a foto de perfil do usuário logado' })
-  @ApiBody({
-    description: 'Dados para atualizar a foto de perfil',
-    type: UpdateProfilePhotoDto,
-    required: true,
-    schema: {
-      example: {
-        profilePhotoUrl: 'https://example.com/profile.jpg',
-      },
-    },
-  })
-  @ApiResponse({ status: 200, description: 'Foto de perfil atualizada com sucesso' })
-  async updateProfilePhoto(@Req() req: Request, @Body() body: UpdateProfilePhotoDto) {
-    const userId = (req.user as any).id;
-    return await this.usersService.updateProfilePhoto(userId, body.profilePhotoUrl);
+  @UseInterceptors(FileInterceptor('file'))
+  async updateProfilePhoto(@Req() req: Request, @UploadedFile() file: Express.Multer.File) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+    return this.usersService.uploadProfilePhoto(userId, file);
   }
 
   @UseGuards(JwtAuthGuard)

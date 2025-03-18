@@ -1,10 +1,15 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
+import { UploadApiResponse } from 'cloudinary';
+import { Readable } from 'stream';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('CLOUDINARY') private readonly cloudinaryInstance: any
+  ) { }
 
   async getUser(userId: string) {
     if (!userId) {
@@ -122,19 +127,43 @@ export class UsersService {
     };
   }
 
-  async updateProfilePhoto(userId: string, profilePhotoUrl: string) {
+  async uploadProfilePhoto(userId: string, file: Express.Multer.File) {
     if (!userId) {
-      throw new HttpException('User ID is missing or invalid', HttpStatus.BAD_REQUEST);
+      throw new HttpException('User ID is required', HttpStatus.BAD_REQUEST);
     }
-    if (!profilePhotoUrl) {
-      throw new HttpException('Profile photo URL is required', HttpStatus.BAD_REQUEST);
+    if (!file) {
+      throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
     }
-    const updatedUser = await this.prisma.user.update({
-      where: { id: userId },
-      data: { profilePhoto: profilePhotoUrl },
-      select: { id: true, name: true, username: true, email: true, profilePhoto: true },
-    });
-    return { message: 'Profile photo updated successfully', user: updatedUser };
+  
+    try {
+      const uploadResult: UploadApiResponse = await new Promise((resolve, reject) => {
+        const stream = this.cloudinaryInstance.uploader.upload_stream(
+          {
+            folder: 'profile',
+            upload_preset: process.env.PROFILE_UPLOAD_PRESET,
+          },
+          (error: any, result: UploadApiResponse) => {
+            if (error) return reject(new HttpException('Image upload failed', HttpStatus.INTERNAL_SERVER_ERROR));
+            resolve(result);
+          },
+        );
+  
+        const bufferStream = new Readable();
+        bufferStream.push(file.buffer);
+        bufferStream.push(null);
+        bufferStream.pipe(stream);
+      });
+  
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: { profilePhoto: uploadResult.secure_url },
+        select: { id: true, name: true, username: true, email: true, profilePhoto: true },
+      });
+  
+      return { message: 'Profile photo updated successfully', user: updatedUser };
+    } catch (error) {
+      throw new HttpException('Failed to upload image', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async searchUsersByUsername(query: string) {
