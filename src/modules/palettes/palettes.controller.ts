@@ -8,59 +8,47 @@ import {
   Param,
   Query,
   Req,
-  HttpException,
-  HttpStatus,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PalettesService } from './palettes.service';
-import { Request } from 'express';
 import { UpdatePaletteDto } from './dto/update.dto';
 import { CreatePaletteDto } from './dto/create.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CustomRequest } from '../../common/custom-request.interface';
 
 @ApiTags('Paletas')
 @Controller('palettes')
+@UseGuards(JwtAuthGuard)
 export class PalettesController {
-  constructor(private readonly palettesService: PalettesService) { }
+  constructor(private readonly palettesService: PalettesService) {}
 
   @Post('create-with-image')
   @ApiOperation({ summary: 'Criar paleta + Upload de Imagem' })
   @UseInterceptors(FileInterceptor('file'))
   async createPaletteWithImage(
-    @Req() req: Request,
+    @Req() req: CustomRequest,
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: CreatePaletteDto,
   ) {
-    const userId = req.headers['x-user-id'] as string;
-    if (!userId) {
-      throw new HttpException('User ID missing in headers', HttpStatus.BAD_REQUEST);
+    if (!req.user || !req.user.id) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
     }
-
-    return this.palettesService.createPaletteWithImage(userId, file, dto);
+    return this.palettesService.createPaletteWithImage(file, dto);
   }
-
-  @Post()
-  async createPalette(@Req() req: Request, @Body() dto: CreatePaletteDto) {
-    console.log("📝 createPalette DTO recebido:", dto);
-  
-    const userId = req.headers['x-user-id'] as string;
-    if (!userId) {
-      throw new HttpException('User ID missing in headers', HttpStatus.BAD_REQUEST);
-    }
-  
-    return this.palettesService.createPalette(userId, dto);
-  }  
 
   @Get('user')
   @ApiOperation({ summary: 'Obter paletas do usuário logado' })
-  async getUserPalettes(@Req() req: Request) {
-    const userId = (req.user as any)?.id || req.headers['x-user-id'];
-    if (!userId) {
-      throw new HttpException('User ID missing', HttpStatus.BAD_REQUEST);
+  async getUserPalettes(@Req() req: CustomRequest) {
+    if (!req.user || !req.user.id) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
     }
-    return this.palettesService.getUserPalettes(userId);
+    return this.palettesService.getUserPalettes(req.user.id);
   }
 
   @Get(':paletteId')
@@ -72,32 +60,38 @@ export class PalettesController {
   @Patch(':paletteId')
   @ApiOperation({ summary: 'Atualizar paleta' })
   async updatePalette(
-    @Req() req: Request,
+    @Req() req: CustomRequest,
     @Param('paletteId') paletteId: string,
     @Body() dto: UpdatePaletteDto,
   ) {
-    const userId = (req as any).userId as string;
-    return this.palettesService.updatePalette(userId, paletteId, dto);
+    if (!req.user || !req.user.id) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+    }
+    return this.palettesService.updatePalette(paletteId, dto);
   }
 
   @Delete(':paletteId')
   @ApiOperation({ summary: 'Excluir paleta' })
-  async deletePalette(@Req() req: Request, @Param('paletteId') paletteId: string) {
-    const userId = (req as any).userId as string;
-    return this.palettesService.deletePalette(userId, paletteId);
+  async deletePalette(@Req() req: CustomRequest, @Param('paletteId') paletteId: string) {
+    if (!req.user || !req.user.id) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+    }
+    return this.palettesService.deletePalette(paletteId);
   }
 
   @Get('public/all')
   @ApiOperation({ summary: 'Obter todas as paletas públicas' })
   async getPublicPalettes() {
-    return this.palettesService.getPublicPalettes();
-  }
+    return this.palettesService.getAllPublicPalettes();
+  }  
 
   @Get('public/user')
   @ApiOperation({ summary: 'Obter paletas públicas do usuário logado' })
-  async getUserPublicPalettes(@Req() req: Request) {
-    const userId = (req as any).userId as string;
-    return this.palettesService.getUserPublicPalettes(userId);
+  async getUserPublicPalettes(@Req() req: CustomRequest) {
+    if (!req.user || !req.user.id) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+    }
+    return this.palettesService.getUserPublicPalettes(req.user.id);
   }
 
   @Get('explore/all')
@@ -116,7 +110,10 @@ export class PalettesController {
 
   @Post(':paletteId/duplicate')
   @ApiOperation({ summary: 'Duplicar uma paleta' })
-  async duplicatePalette(@Param('paletteId') paletteId: string) {
+  async duplicatePalette(@Req() req: CustomRequest, @Param('paletteId') paletteId: string) {
+    if (!req.user || !req.user.id) {
+      throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+    }
     return this.palettesService.duplicatePalette(paletteId);
   }
 }
