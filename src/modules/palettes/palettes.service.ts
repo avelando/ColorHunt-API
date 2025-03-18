@@ -93,10 +93,12 @@ export class PalettesService {
           user: { select: { id: true, name: true, username: true, profilePhoto: true } },
         },
       });
+
       if (!palette) {
         throw new HttpException('Palette not found', HttpStatus.NOT_FOUND);
       }
-      return { palette };
+
+      return palette;
     } catch (error) {
       console.error('Error fetching palette:', error);
       throw new HttpException(
