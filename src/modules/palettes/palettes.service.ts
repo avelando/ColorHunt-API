@@ -110,18 +110,25 @@ export class PalettesService {
 
   async updatePalette(paletteId: string, dto: UpdatePaletteDto) {
     const userId = this.userId;
-    const palette = await this.prisma.palette.findUnique({ where: { id: paletteId } });
+    const palette = await this.prisma.palette.findUnique({
+      where: { id: paletteId },
+      include: { colors: true },
+    });
+  
     if (!palette) throw new HttpException('Palette not found', HttpStatus.NOT_FOUND);
     if (palette.userId !== userId) throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
-
-    return await this.prisma.palette.update({
+  
+    const updatedPalette = await this.prisma.palette.update({
       where: { id: paletteId },
       data: {
         title: dto.title ?? palette.title,
         isPublic: dto.isPublic !== undefined ? this.parseIsPublic(dto.isPublic) : palette.isPublic,
       },
+      include: { colors: true },
     });
-  }
+  
+    return { message: "Palette updated successfully", palette: updatedPalette };
+  }  
 
   async deletePalette(paletteId: string): Promise<{ message: string }> {
     const userId = this.userId; 
