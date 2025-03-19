@@ -15,6 +15,14 @@ async function bootstrap() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: '*',
+    exposedHeaders: '*',
+    credentials: true,
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
