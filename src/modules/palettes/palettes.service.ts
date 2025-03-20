@@ -156,28 +156,26 @@ export class PalettesService {
     });
   }
   
-  async getExplorePalettes(page: number, limit: number) {
-    const pageNumber = page || 1;
-    const pageSize = limit || 10;
-    const offset = (pageNumber - 1) * pageSize;
-
+  async getExplorePalettes(userId: string) {
     try {
       const palettes = await this.prisma.palette.findMany({
-        where: { isPublic: true },
+        where: { 
+          isPublic: true, 
+          userId: { not: userId }
+        },
         include: {
           photo: true,
           colors: true,
           user: { select: { id: true, name: true, username: true, profilePhoto: true } },
         },
         orderBy: { createdAt: 'desc' },
-        take: pageSize,
-        skip: offset,
       });
+
       return { palettes };
     } catch (error) {
-      console.error('Error fetching explore palettes:', error);
+      console.error('❌ Erro ao buscar paletas públicas:', error);
       throw new HttpException(
-        { error: 'Error fetching explore palettes', details: error.message },
+        { error: 'Erro ao buscar paletas públicas', details: error.message },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -206,26 +204,50 @@ export class PalettesService {
     }
   }
 
-  async duplicatePalette(originalId: string) {
-    const userId = this.userId;
+  async duplicatePalette(userId: string, originalId: string) {
     const original = await this.prisma.palette.findUnique({
       where: { id: originalId },
       include: { photo: true, colors: true },
     });
-    if (!original) throw new HttpException('Original palette not found', HttpStatus.NOT_FOUND);
-    if (original.userId !== userId) throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
-
+  
+    if (!original) {
+      throw new HttpException('Original palette not found', HttpStatus.NOT_FOUND);
+    }
+  
+    if (original.userId !== userId && !original.isPublic) {
+      throw new HttpException('Você não tem permissão para duplicar esta paleta.', HttpStatus.FORBIDDEN);
+    }
+  
     const newPhoto = await this.prisma.photo.create({
-      data: { userId, imageUrl: original.photo.imageUrl },
+      data: {
+        userId,
+        imageUrl: original.photo.imageUrl,
+      },
     });
+  
     const newPalette = await this.prisma.palette.create({
-      data: { userId, photoId: newPhoto.id, title: `${original.title} (copy)`, isPublic: false, originalId },
+      data: {
+        userId,
+        photoId: newPhoto.id,
+        title: `${original.title} (copy)`,
+        isPublic: false,
+        originalId,
+      },
     });
-    const colors = original.colors.map(c => ({ hex: c.hex, paletteId: newPalette.id, photoId: newPhoto.id }));
+  
+    const colors = original.colors.map((c) => ({
+      hex: c.hex,
+      paletteId: newPalette.id,
+      photoId: newPhoto.id,
+    }));
+  
     await this.prisma.color.createMany({ data: colors });
-
-    return this.prisma.palette.findUnique({ where: { id: newPalette.id }, include: { photo: true, colors: true } });
-  }
+  
+    return this.prisma.palette.findUnique({
+      where: { id: newPalette.id },
+      include: { photo: true, colors: true },
+    });
+  }  
 
   async getAllPublicPalettes() {
     return await this.prisma.palette.findMany({

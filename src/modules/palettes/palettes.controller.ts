@@ -17,10 +17,11 @@ import {
 import { PalettesService } from './palettes.service';
 import { UpdatePaletteDto } from './dto/update.dto';
 import { CreatePaletteDto } from './dto/create.dto';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CustomRequest } from '../../common/custom-request.interface';
+import { Request } from 'express';
 
 @ApiTags('Paletas')
 @Controller('palettes')
@@ -94,13 +95,16 @@ export class PalettesController {
     return this.palettesService.getUserPublicPalettes(req.user.id);
   }
 
-  @Get('explore/all')
-  @ApiOperation({ summary: 'Explorar paletas públicas com paginação' })
-  async getExplorePalettes(@Query('page') page: string, @Query('limit') limit: string) {
-    const pageNumber = parseInt(page, 10) || 1;
-    const pageSize = parseInt(limit, 10) || 10;
-    return this.palettesService.getExplorePalettes(pageNumber, pageSize);
-  }
+  @UseGuards(JwtAuthGuard)
+  @Get('explore')
+  @ApiOperation({ summary: 'Lista todas as paletas públicas (exceto as do usuário logado)' })
+  @ApiResponse({ status: 200, description: 'Lista de paletas públicas retornada com sucesso' })
+  async getExplorePalettes(@Req() req: Request) {
+    if (!req.user) {
+      throw new HttpException('Usuário não autenticado', HttpStatus.UNAUTHORIZED);
+    }
+    return await this.palettesService.getExplorePalettes(req.user.id);
+  }  
 
   @Get('details/:paletteId')
   @ApiOperation({ summary: 'Obter detalhes da paleta' })
@@ -110,10 +114,14 @@ export class PalettesController {
 
   @Post(':paletteId/duplicate')
   @ApiOperation({ summary: 'Duplicar uma paleta' })
-  async duplicatePalette(@Req() req: CustomRequest, @Param('paletteId') paletteId: string) {
+  async duplicatePalette(
+    @Req() req: CustomRequest, 
+    @Param('paletteId') paletteId: string
+  ) {
     if (!req.user || !req.user.id) {
       throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
     }
-    return this.palettesService.duplicatePalette(paletteId);
-  }
+  
+    return this.palettesService.duplicatePalette(req.user.id, paletteId);
+  }  
 }
