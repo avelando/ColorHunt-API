@@ -239,17 +239,22 @@ export class UsersService {
       },
     });
   
-    const followingIds = await this.prisma.follower.findMany({
+    const following = await this.prisma.follower.findMany({
       where: { followerId: loggedUserId },
       select: { followingId: true },
     });
   
-    const followingIdSet = new Set(followingIds.map(f => f.followingId));
+    const followingIdSet = new Set(following.map(f => f.followingId));
   
-    return followers.map(f => ({
-      ...f.follower,
-      profilePhoto: f.follower.profilePhoto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-      seguindoDeVolta: followingIdSet.has(f.follower.id),
-    }));
+    return {
+      followers: followers.map(f => ({
+        id: f.follower.id,
+        name: f.follower.name,
+        username: f.follower.username,
+        profilePhoto: f.follower.profilePhoto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+        seguindoDeVolta: followingIdSet.has(f.follower.id),
+      })),
+      followingIds: Array.from(followingIdSet),
+    };
   }  
 }
