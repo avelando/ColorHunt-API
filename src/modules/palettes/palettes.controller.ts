@@ -80,12 +80,6 @@ export class PalettesController {
     return this.palettesService.deletePalette(paletteId);
   }
 
-  @Get('public/all')
-  @ApiOperation({ summary: 'Obter todas as paletas públicas' })
-  async getPublicPalettes() {
-    return this.palettesService.getAllPublicPalettes();
-  }  
-
   @Get('public/user')
   @ApiOperation({ summary: 'Obter paletas públicas do usuário logado' })
   async getUserPublicPalettes(@Req() req: CustomRequest) {

@@ -79,9 +79,16 @@ export class PalettesService {
   async getUserPalettes(id: string) {
     return await this.prisma.palette.findMany({
       where: { userId: this.userId },
-      include: { photo: true, colors: true, user: true },
+      include: { 
+        photo: true, 
+        colors: true, 
+        user: true, 
+        original: { 
+          include: { user: { select: { id: true, username: true } } }
+        }
+      },
     });
-  }  
+  }    
   
   async getPalette(paletteId: string) {
     try {
@@ -167,10 +174,13 @@ export class PalettesService {
           photo: true,
           colors: true,
           user: { select: { id: true, name: true, username: true, profilePhoto: true } },
+          original: { 
+            include: { user: { select: { id: true, username: true } } }
+          }
         },
         orderBy: { createdAt: 'desc' },
       });
-
+  
       return { palettes };
     } catch (error) {
       console.error('❌ Erro ao buscar paletas públicas:', error);
@@ -189,11 +199,16 @@ export class PalettesService {
           photo: { select: { id: true, imageUrl: true } },
           colors: true,
           user: { select: { id: true, name: true, username: true, profilePhoto: true } },
+          original: { 
+            include: { user: { select: { id: true, username: true } } }
+          }
         },
       });
+  
       if (!palette) {
         throw new HttpException('Palette not found', HttpStatus.NOT_FOUND);
       }
+  
       return { palette };
     } catch (error) {
       console.error('❌ Erro ao buscar detalhes da paleta:', error);
@@ -202,7 +217,7 @@ export class PalettesService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
+  }  
 
   async duplicatePalette(userId: string, originalId: string) {
     const original = await this.prisma.palette.findUnique({
@@ -247,12 +262,5 @@ export class PalettesService {
       where: { id: newPalette.id },
       include: { photo: true, colors: true },
     });
-  }  
-
-  async getAllPublicPalettes() {
-    return await this.prisma.palette.findMany({
-      where: { isPublic: true },
-      include: { photo: true, colors: true, user: true },
-    });
-  }  
+  } 
 }
