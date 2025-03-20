@@ -226,4 +226,30 @@ export class UsersService {
       },
     };
   }
+
+  async getFollowersWithStatus(userId: string, loggedUserId: string) {
+    if (!userId) {
+      throw new HttpException('User ID is required', HttpStatus.BAD_REQUEST);
+    }
+  
+    const followers = await this.prisma.follower.findMany({
+      where: { followingId: userId },
+      include: {
+        follower: { select: { id: true, name: true, username: true, profilePhoto: true } },
+      },
+    });
+  
+    const followingIds = await this.prisma.follower.findMany({
+      where: { followerId: loggedUserId },
+      select: { followingId: true },
+    });
+  
+    const followingIdSet = new Set(followingIds.map(f => f.followingId));
+  
+    return followers.map(f => ({
+      ...f.follower,
+      profilePhoto: f.follower.profilePhoto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+      seguindoDeVolta: followingIdSet.has(f.follower.id),
+    }));
+  }  
 }

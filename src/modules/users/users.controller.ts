@@ -167,6 +167,20 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get(':userId/followers-status')
+  @ApiOperation({ summary: 'Retorna os seguidores do usuário especificado e verifica se o usuário autenticado os segue' })
+  @ApiResponse({ status: 200, description: 'Lista de seguidores retornada com sucesso' })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID do usuário para o qual se deseja obter os seguidores',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  async getFollowersWithStatus(@Param('userId') userId: string, @Req() req: Request) {
+    const loggedUserId = (req.user as any).id;
+    return await this.usersService.getFollowersWithStatus(userId, loggedUserId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('unfollow')
   @ApiOperation({ summary: 'Deixa de seguir um usuário' })
   @ApiBody({
