@@ -93,13 +93,14 @@ export class PalettesController {
   @Get('explore')
   @ApiOperation({ summary: 'Lista todas as paletas públicas (exceto as do usuário logado)' })
   @ApiResponse({ status: 200, description: 'Lista de paletas públicas retornada com sucesso' })
-  async getExplorePalettes(@Req() req: Request) {
-    if (!req.user) {
+  async getExplorePalettes(@Req() req: CustomRequest) {
+    if (!req.user || !req.user.id) {
       throw new HttpException('Usuário não autenticado', HttpStatus.UNAUTHORIZED);
     }
+  
     return await this.palettesService.getExplorePalettes(req.user.id);
-  }  
-
+  }
+    
   @Get('details/:paletteId')
   @ApiOperation({ summary: 'Obter detalhes da paleta' })
   async getPaletteDetails(@Param('paletteId') paletteId: string) {

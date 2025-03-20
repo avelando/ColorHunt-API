@@ -165,6 +165,10 @@ export class PalettesService {
   
   async getExplorePalettes(userId: string) {
     try {
+      if (!userId) {
+        throw new HttpException("Usuário não autenticado", HttpStatus.UNAUTHORIZED);
+      }
+  
       const palettes = await this.prisma.palette.findMany({
         where: { 
           isPublic: true, 
@@ -173,9 +177,13 @@ export class PalettesService {
         include: {
           photo: true,
           colors: true,
-          user: { select: { id: true, name: true, username: true, profilePhoto: true } },
+          user: { 
+            select: { id: true, name: true, username: true, profilePhoto: true }
+          },
           original: { 
-            include: { user: { select: { id: true, username: true } } }
+            include: { 
+              user: { select: { id: true, username: true } }
+            }
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -185,11 +193,11 @@ export class PalettesService {
     } catch (error) {
       console.error('❌ Erro ao buscar paletas públicas:', error);
       throw new HttpException(
-        { error: 'Erro ao buscar paletas públicas', details: error.message },
+        { error: 'Erro ao buscar paletas públicas', details: error.message || "Erro desconhecido" },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
+  }  
 
   async getPaletteDetails(paletteId: string) {
     try {
