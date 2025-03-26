@@ -208,8 +208,13 @@ export class UsersService {
         title: true,
         colors: true,
         photo: { select: { imageUrl: true } },
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
-    });
+    });    
     const formattedPalettes = publicPalettes.map(palette => ({
       ...palette,
       imageUrl: palette.photo?.imageUrl || null,
